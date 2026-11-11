@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <title>Net Worth</title>
+  <meta name="description" content="Monitor all of your accounts with vibrant charts." />
+  <meta name="theme-color" content="#07070f" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Net Worth" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="bg-blobs" aria-hidden="true"><span></span><span></span><span></span></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">$</div>
+      <span>Net Worth</span>
+    </div>
+    <div class="top-actions">
+      <button class="icon-btn" id="btnHide" aria-label="Hide amounts"></button>
+      <button class="icon-btn" id="btnSettings" aria-label="Settings"></button>
+    </div>
+  </header>
+
+  <main id="app">
+    <section class="hero glass">
+      <div class="hero-label" id="heroLabel">Total net worth</div>
+      <div class="hero-total" id="netTotal">$0.00</div>
+      <div class="hero-change" id="netChange"></div>
+      <div class="chart-wrap"><svg id="mainChart" class="chart"></svg></div>
+      <div class="ranges" id="ranges"></div>
+    </section>
+
+    <section class="stats" id="stats"></section>
+
+    <section class="glass card">
+      <div class="card-head"><h2>Allocation</h2><span class="muted small" id="allocNote"></span></div>
+      <div class="donut-row">
+        <svg id="donut" class="donut" viewBox="0 0 180 180"></svg>
+        <ul class="legend" id="legend"></ul>
+      </div>
+    </section>
+
+    <section class="glass card">
+      <div class="card-head"><h2>Monthly change</h2><span class="muted small">last 12 months</span></div>
+      <svg id="bars" class="chart bars"></svg>
+      <p class="muted small empty-note" id="barsEmpty" hidden>Update your balances across a few months to see trends here.</p>
+    </section>
+
+    <section class="accounts">
+      <div class="section-head">
+        <h2>Accounts</h2>
+        <button class="chip-btn" id="btnQuick">Update balances</button>
+      </div>
+      <div id="accountList"></div>
+    </section>
+
+    <div id="emptyState" class="glass card empty" hidden>
+      <div class="empty-icon">$</div>
+      <h2>Welcome</h2>
+      <p class="muted">Add each account you want to follow (Robinhood, banks, 401k, crypto, credit cards…) with its current balance. Update them whenever you like and your charts will grow over time.</p>
+      <button class="primary-btn" id="btnFirst">Add your first account</button>
+      <button class="ghost-btn" id="btnDemo">Explore with demo data</button>
+    </div>
+
+    <footer class="foot muted small">Your data stays on this device. Back it up from Settings.</footer>
+  </main>
+
+  <button class="fab" id="fab" aria-label="Add account">+</button>
+
+  <div class="sheet" id="sheet" aria-hidden="true">
+    <div class="sheet-backdrop" data-close></div>
+    <div class="sheet-panel" role="dialog" aria-modal="true">
+      <div class="grabber" data-close></div>
+      <div id="sheetBody"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
