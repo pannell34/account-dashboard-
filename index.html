@@ -42,10 +42,18 @@
     <section class="stats" id="stats"></section>
 
     <section class="glass card">
-      <div class="card-head"><h2>Allocation</h2><span class="muted small" id="allocNote"></span></div>
+      <div class="card-head"><h2>Assets</h2><span class="muted small" id="allocNote"></span></div>
       <div class="donut-row">
         <svg id="donut" class="donut" viewBox="0 0 180 180"></svg>
         <ul class="legend" id="legend"></ul>
+      </div>
+    </section>
+
+    <section class="glass card">
+      <div class="card-head"><h2>Liabilities</h2><span class="muted small" id="liabNote"></span></div>
+      <div class="donut-row">
+        <svg id="donutL" class="donut" viewBox="0 0 180 180"></svg>
+        <ul class="legend" id="legendL"></ul>
       </div>
     </section>
 
@@ -58,7 +66,10 @@
     <section class="accounts">
       <div class="section-head">
         <h2>Accounts</h2>
-        <button class="chip-btn" id="btnQuick">Update balances</button>
+        <div class="head-btns">
+          <button class="chip-btn alt" id="btnReorder">Reorder</button>
+          <button class="chip-btn" id="btnQuick">Update balances</button>
+        </div>
       </div>
       <div id="accountList"></div>
     </section>

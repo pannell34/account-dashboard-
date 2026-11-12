@@ -4,9 +4,10 @@ A dark, colorful app for keeping track of all your accounts (Robinhood, banks, 4
 
 ## Features
 - **Net worth hero chart.** A glowing gradient area chart. Drag a finger across it to see the value on any date. Ranges: 1W · 1M · 3M · YTD · 1Y · ALL.
-- **Assets / Debts / Top mover** tiles.
-- **Allocation donut** by account type.
+- **Assets / Liabilities / Top mover** tiles.
+- **Assets and Liabilities donuts** showing each broken down by type (brokerage, retirement… / credit card, mortgage, auto, student loan…).
 - **Monthly change** bar chart covering the last 12 months.
+- **Collapsible Assets and Liabilities drop-downs** with totals. Tap **Reorder** and drag the ⋮⋮ handle to put accounts in any order you like.
 - **Account cards** with sparklines and change over the selected range. Tap one for its own chart, its balance history and editing.
 - **Update balances** fills in every account on one screen. It's quick to do weekly while you look at Robinhood.
 - **Privacy toggle** (eye icon) hides every dollar amount.
