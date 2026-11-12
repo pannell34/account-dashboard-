@@ -10,10 +10,13 @@
     crypto:     { label: 'Crypto',      color: '#FFB020' },
     checking:   { label: 'Checking',    color: '#00E096' },
     savings:    { label: 'Savings',     color: '#4D7CFF' },
-    property:   { label: 'Property',    color: '#FF6B3D' },
+    property:   { label: 'Property',    color: '#2EE6D6' },
     other:      { label: 'Other asset', color: '#C64DFF' },
-    credit:     { label: 'Credit card', color: '#FF4D9D', liability: true },
-    loan:       { label: 'Loan',        color: '#FF3B5C', liability: true },
+    credit:     { label: 'Credit card',  color: '#FF4D9D', liability: true },
+    mortgage:   { label: 'Mortgage',     color: '#FF8A3D', liability: true },
+    auto:       { label: 'Auto loan',    color: '#FFC23D', liability: true },
+    student:    { label: 'Student loan', color: '#B44DFF', liability: true },
+    loan:       { label: 'Other loan',   color: '#FF3B5C', liability: true },
   };
   const SWATCHES = ['#7C5CFF', '#00D4FF', '#00E096', '#FFB020', '#FF4D9D', '#FF6B3D', '#4D7CFF', '#C64DFF', '#2EE6D6', '#FF3B5C'];
   const RANGES = ['1W', '1M', '3M', 'YTD', '1Y', 'ALL'];
@@ -22,6 +25,8 @@
   const ICONS = {
     eye: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
     eyeOff: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.9 17.9A10.4 10.4 0 0 1 12 19c-6.5 0-10-7-10-7a18 18 0 0 1 4.1-5.1M9.9 5.2A9.6 9.6 0 0 1 12 5c6.5 0 10 7 10 7a18 18 0 0 1-2.2 3.2M14.1 14.1a3 3 0 1 1-4.2-4.2M2 2l20 20"/></svg>',
+    chev: '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>',
+    grip: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.7"/><circle cx="15" cy="6" r="1.7"/><circle cx="9" cy="12" r="1.7"/><circle cx="15" cy="12" r="1.7"/><circle cx="9" cy="18" r="1.7"/><circle cx="15" cy="18" r="1.7"/></svg>',
     gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
   };
 
@@ -50,6 +55,7 @@
   // ---------------------------------------------------------------- state
   let state = load();
   let range = state.settings.range || '3M';
+  let reordering = false;
 
   function load() {
     try {
@@ -309,6 +315,7 @@
     $('#fab').hidden = !has;
     $('#btnHide').innerHTML = state.settings.hide ? ICONS.eyeOff : ICONS.eye;
     if (!has) return;
+    ensureOrder();
 
     // Hero
     const series = netSeries(range);
@@ -349,25 +356,13 @@
     }
     $('#stats').innerHTML = `
       <div class="stat glass" style="--accent:#00E096"><div class="k">Assets</div><div class="v">${moneyShort(assets)}</div></div>
-      <div class="stat glass" style="--accent:#FF4D9D"><div class="k">Debts</div><div class="v">${moneyShort(liabs)}</div></div>
+      <div class="stat glass" style="--accent:#FF4D9D"><div class="k">Liabilities</div><div class="v">${moneyShort(liabs)}</div></div>
       <div class="stat glass" style="--accent:${best ? best.a.color : '#7C5CFF'}"><div class="k">Top mover</div>
         <div class="v ${best && best.g < 0 ? 'down' : 'up'}" title="${esc(best?.a.name)}">${best ? pct(best.g) : '—'}</div></div>`;
 
-    // Allocation by type (assets only)
-    const byType = {};
-    for (const a of state.accounts) {
-      const l = latest(a); if (!l || isLiab(a) || l.balance <= 0) continue;
-      byType[a.type] = (byType[a.type] || 0) + l.balance;
-    }
-    const segs = Object.entries(byType).sort((x, y) => y[1] - x[1]).map(([t, v]) => ({ label: TYPES[t]?.label || t, value: v, color: TYPES[t]?.color || '#888' }));
-    if (segs.length) {
-      donut($('#donut'), segs, 'Assets', moneyShort(assets));
-      $('#legend').innerHTML = segs.map((s) => `<li><span class="dot" style="background:${s.color};color:${s.color}"></span><span class="name">${esc(s.label)}</span><span class="pct">${((s.value / assets) * 100).toFixed(1)}%</span></li>`).join('');
-    } else {
-      donut($('#donut'), [{ value: 1, color: '#333' }], 'Assets', '$0');
-      $('#legend').innerHTML = '<li class="muted">No assets yet</li>';
-    }
-    $('#allocNote').textContent = `${segs.length} categor${segs.length === 1 ? 'y' : 'ies'}`;
+    // Breakdown donuts: assets and liabilities by type
+    breakdown(state.accounts.filter((a) => !isLiab(a)), assets, '#donut', '#legend', '#allocNote', 'Assets', 'No assets yet');
+    breakdown(state.accounts.filter(isLiab), liabs, '#donutL', '#legendL', '#liabNote', 'Owed', 'No liabilities — nice!');
 
     // Monthly bars
     const months = monthlyChanges();
@@ -375,10 +370,105 @@
     $('#barsEmpty').hidden = months.length > 0;
     if (months.length) barChart($('#bars'), months);
 
-    // Account list, grouped assets / debts
-    const sorted = [...state.accounts].sort((a, b) => (latest(b)?.balance || 0) - (latest(a)?.balance || 0));
-    const group = (list, label) => !list.length ? '' : `<div class="group-label">${label}</div>` + list.map(accountRow).join('');
-    $('#accountList').innerHTML = group(sorted.filter((a) => !isLiab(a)), 'Assets') + group(sorted.filter(isLiab), 'Debts');
+    // Account list: collapsible Assets / Liabilities groups, in the user's own order
+    $('#btnReorder').textContent = reordering ? 'Done' : 'Reorder';
+    $('#btnReorder').classList.toggle('on', reordering);
+    $('#accountList').classList.toggle('reordering', reordering);
+    $('#accountList').innerHTML =
+      groupHTML('assets', 'Assets', state.accounts.filter((a) => !isLiab(a)), money(assets), 'linear-gradient(180deg,#00E096,#00D4FF)') +
+      groupHTML('liabilities', 'Liabilities', state.accounts.filter(isLiab), (liabs ? '−' : '') + money(liabs), 'linear-gradient(180deg,#FF4D9D,#FF8A3D)');
+  }
+
+  function breakdown(list, total, donutSel, legendSel, noteSel, centerLabel, emptyText) {
+    const byType = {};
+    for (const a of list) {
+      const l = latest(a); if (!l || Math.abs(l.balance) <= 0) continue;
+      byType[a.type] = (byType[a.type] || 0) + Math.abs(l.balance);
+    }
+    const segs = Object.entries(byType).sort((x, y) => y[1] - x[1])
+      .map(([t, v]) => ({ label: TYPES[t]?.label || t, value: v, color: TYPES[t]?.color || '#888' }));
+    if (segs.length) {
+      donut($(donutSel), segs, centerLabel, moneyShort(total));
+      $(legendSel).innerHTML = segs.map((s) => `<li><span class="dot" style="background:${s.color};color:${s.color}"></span><span class="name">${esc(s.label)}</span><span class="pct">${((s.value / total) * 100).toFixed(1)}%</span></li>`).join('');
+    } else {
+      donut($(donutSel), [{ value: 1, color: 'rgba(255,255,255,.08)' }], centerLabel, '$0');
+      $(legendSel).innerHTML = `<li class="muted">${emptyText}</li>`;
+    }
+    $(noteSel).textContent = segs.length ? `${segs.length} categor${segs.length === 1 ? 'y' : 'ies'}` : '';
+  }
+
+  function groupHTML(key, label, list, totalText, accent) {
+    if (!list.length) return '';
+    const open = reordering || !state.settings.collapsed?.[key];
+    return `<div class="group glass ${open ? 'open' : ''}" data-group="${key}">
+      <button class="group-head" data-toggle="${key}" aria-expanded="${open}">
+        <span class="g-bar" style="background:${accent}"></span>
+        <span class="g-title">${label}</span><span class="g-count">${list.length}</span>
+        <span class="g-total">${totalText}</span>${ICONS.chev}
+      </button>
+      <div class="group-body"><div class="group-inner"><div class="group-list" data-list="${key}">${list.map(accountRow).join('')}</div></div></div>
+    </div>`;
+  }
+
+  /** Accounts are displayed in array order. Older data was shown sorted by balance, so keep that look once. */
+  function ensureOrder() {
+    if (state.settings.ordered) return;
+    state.accounts.sort((a, b) => (latest(b)?.balance || 0) - (latest(a)?.balance || 0));
+    state.settings.ordered = true;
+    save();
+  }
+
+  /** Drag-to-reorder within one group, driven by the grip handle (works with touch, pen and mouse). */
+  function startDrag(e, handle) {
+    e.preventDefault();
+    const row = handle.closest('.acct'), list = row.parentNode;
+    const rows = [...list.children];
+    const from = rows.indexOf(row);
+    const rects = rows.map((r) => r.getBoundingClientRect());
+    const gap = rows.length > 1 ? rects[1].top - rects[0].bottom : 0;
+    const shift = rects[from].height + gap;
+    const minDy = rects[0].top - rects[from].top;
+    const maxDy = rects[rects.length - 1].bottom - rects[from].bottom;
+    const y0 = e.clientY;
+    let to = from;
+    row.classList.add('dragging');
+    list.classList.add('is-dragging');
+    handle.setPointerCapture?.(e.pointerId);
+
+    const move = (ev) => {
+      const dy = Math.max(minDy, Math.min(maxDy, ev.clientY - y0));
+      row.style.transform = `translateY(${dy}px) scale(1.03)`;
+      const center = rects[from].top + rects[from].height / 2 + dy;
+      to = rows.filter((r, i) => i !== from && rects[i].top + rects[i].height / 2 < center).length;
+      rows.forEach((r, i) => {
+        if (i === from) return;
+        const s = i < from && i >= to ? shift : i > from && i <= to ? -shift : 0;
+        r.style.transform = s ? `translateY(${s}px)` : '';
+      });
+    };
+    const end = () => {
+      handle.removeEventListener('pointermove', move);
+      handle.removeEventListener('pointerup', end);
+      handle.removeEventListener('pointercancel', end);
+      if (to !== from) {
+        const ids = rows.map((r) => r.dataset.acct);
+        ids.splice(to, 0, ids.splice(from, 1)[0]);
+        applyOrder(ids);
+        navigator.vibrate?.(8);
+      }
+      render();
+    };
+    handle.addEventListener('pointermove', move);
+    handle.addEventListener('pointerup', end);
+    handle.addEventListener('pointercancel', end);
+  }
+
+  function applyOrder(groupIds) {
+    const rank = new Map(groupIds.map((id, i) => [id, i]));
+    const inGroup = state.accounts.filter((a) => rank.has(a.id)).sort((a, b) => rank.get(a.id) - rank.get(b.id));
+    let k = 0;
+    state.accounts = state.accounts.map((a) => (rank.has(a.id) ? inGroup[k++] : a));
+    save();
   }
 
   function accountRow(a) {
@@ -389,15 +479,16 @@
     // For debts, a falling balance is good news.
     const good = isLiab(a) ? delta <= 0 : delta >= 0;
     const sub = [a.institution, TYPES[a.type]?.label].filter(Boolean).join(' · ');
-    return `<button class="acct glass" data-acct="${a.id}">
+    return `<div class="acct" role="button" tabindex="0" data-acct="${a.id}">
       <div class="acct-icon" style="background:linear-gradient(135deg, ${a.color}, ${a.color}88);box-shadow:0 4px 16px ${a.color}55">${esc(initials(a.name))}</div>
       <div class="acct-main"><div class="acct-name">${esc(a.name)}</div><div class="acct-sub">${esc(sub)}</div></div>
-      ${sparkline(pts, a.color)}
+      ${reordering ? '' : sparkline(pts, a.color)}
       <div class="acct-right">
         <div class="acct-bal">${isLiab(a) ? '−' : ''}${money(Math.abs(l?.balance ?? 0))}</div>
         <div class="acct-chg ${good ? 'up' : 'down'}">${delta === 0 ? '<span class="muted">no change</span>' : signed(delta)}</div>
       </div>
-    </button>`;
+      ${reordering ? `<span class="grip" aria-label="Drag to reorder">${ICONS.grip}</span>` : ''}
+    </div>`;
   }
 
   // ---------------------------------------------------------------- sheets
@@ -620,6 +711,7 @@
       ['Checking', 'Chase', 'checking', '#4D7CFF', 6800, 0, 0.05],
       ['High-Yield Savings', 'Ally', 'savings', '#C64DFF', 15000, 0.0008, 0.002],
       ['Sapphire Card', 'Chase', 'credit', '#FF4D9D', 1900, 0, 0.18],
+      ['Car Loan', 'Ally', 'auto', '#FFC23D', 18500, -0.006, 0],
     ];
     const t = today();
     state.accounts = defs.map(([name, institution, type, color, startBal, drift, vol]) => {
@@ -633,6 +725,7 @@
       }
       return a;
     });
+    state.settings.ordered = true;
     save(); render(); toast('Demo data loaded');
   }
 
@@ -648,7 +741,30 @@
     const b = e.target.closest('[data-range]'); if (!b) return;
     range = b.dataset.range; state.settings.range = range; save(); render();
   };
-  $('#accountList').onclick = (e) => { const b = e.target.closest('[data-acct]'); if (b) accountDetail(b.dataset.acct); };
+  $('#btnReorder').onclick = () => { reordering = !reordering; render(); if (reordering) toast('Drag ⋮⋮ to move accounts'); };
+  $('#accountList').onclick = (e) => {
+    const t = e.target.closest('[data-toggle]');
+    if (t) {
+      if (reordering) return;
+      const key = t.dataset.toggle;
+      state.settings.collapsed = { ...(state.settings.collapsed || {}), [key]: !state.settings.collapsed?.[key] };
+      save();
+      const g = t.closest('.group');
+      g.classList.toggle('open', !state.settings.collapsed[key]);
+      t.setAttribute('aria-expanded', String(!state.settings.collapsed[key]));
+      return;
+    }
+    if (reordering) return;
+    const b = e.target.closest('[data-acct]'); if (b) accountDetail(b.dataset.acct);
+  };
+  $('#accountList').addEventListener('pointerdown', (e) => {
+    const h = e.target.closest('.grip');
+    if (h && reordering) startDrag(e, h);
+  });
+  $('#accountList').addEventListener('keydown', (e) => {
+    const b = e.target.closest('[data-acct]');
+    if (b && (e.key === 'Enter' || e.key === ' ') && !reordering) { e.preventDefault(); accountDetail(b.dataset.acct); }
+  });
 
   let resizeT;
   window.addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(render, 200); });
