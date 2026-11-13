@@ -28,6 +28,13 @@
     chev: '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>',
     grip: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.7"/><circle cx="15" cy="6" r="1.7"/><circle cx="9" cy="12" r="1.7"/><circle cx="15" cy="12" r="1.7"/><circle cx="9" cy="18" r="1.7"/><circle cx="15" cy="18" r="1.7"/></svg>',
     face: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3H5a2 2 0 0 0-2 2v2M17 3h2a2 2 0 0 1 2 2v2M7 21H5a2 2 0 0 1-2-2v-2M17 21h2a2 2 0 0 0 2-2v-2M9 9v1.5M15 9v1.5M12 9v4.5h-1M9.2 16.2a4 4 0 0 0 5.6 0"/></svg>',
+    bank: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10l9-6 9 6M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 21h18"/></svg>',
+    pencil: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
+    chart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18M7 15l4-4 3 3 6-7"/></svg>',
+    card: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg>',
+    home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg>',
+    sync: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16M3 12a9 9 0 0 1 15.5-6.2L21 8M21 3v5h-5M3 21v-5h5"/></svg>',
+    link: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>',
     gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
   };
 
@@ -63,12 +70,13 @@
       const raw = localStorage.getItem(STORE_KEY);
       if (raw) {
         const s = JSON.parse(raw);
-        s.accounts ||= []; s.settings ||= {};
+        s.accounts ||= []; s.settings ||= {}; s.plaid ||= { items: [], lastSync: 0 };
         return s;
       }
     } catch (e) { /* ignore */ }
-    return { accounts: [], settings: { hide: false } };
+    return freshState();
   }
+  function freshState() { return { accounts: [], settings: { hide: false }, plaid: { items: [], lastSync: 0 } }; }
   function save() {
     try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
     catch (e) { toast('Could not save — storage is full or blocked'); }
@@ -309,12 +317,14 @@
   const rangeLabel = (r) => ({ '1W': 'past week', '1M': 'past month', '3M': 'past 3 months', YTD: 'this year', '1Y': 'past year', ALL: 'all time' }[r]);
 
   function render() {
+    state.plaid ||= { items: [], lastSync: 0 };
     const has = state.accounts.length > 0;
     $('#emptyState').hidden = has;
     for (const sel of ['.hero', '#stats', '.accounts']) $(sel).hidden = !has;
     document.querySelectorAll('main > .card:not(.empty)').forEach((c) => (c.hidden = !has));
     $('#fab').hidden = !has;
     $('#btnHide').innerHTML = state.settings.hide ? ICONS.eyeOff : ICONS.eye;
+    renderSyncRow();
     if (!has) return;
     ensureOrder();
 
@@ -479,10 +489,12 @@
     const delta = (l?.balance ?? 0) - b0;
     // For debts, a falling balance is good news.
     const good = isLiab(a) ? delta <= 0 : delta >= 0;
-    const sub = [a.institution, TYPES[a.type]?.label].filter(Boolean).join(' · ');
+    const sub = [a.institution, a.plaid?.mask ? '••' + a.plaid.mask : TYPES[a.type]?.label].filter(Boolean).join(' · ');
+    const bad = a.plaid && state.plaid.items.find((i) => i.id === a.plaid.itemId)?.error;
+    const badge = a.plaid ? `<span class="auto ${bad ? 'bad' : ''}" title="${bad ? 'Needs reconnecting' : 'Updates automatically'}">${ICONS.link}</span>` : '';
     return `<div class="acct" role="button" tabindex="0" data-acct="${a.id}">
       <div class="acct-icon" style="background:linear-gradient(135deg, ${a.color}, ${a.color}88);box-shadow:0 4px 16px ${a.color}55">${esc(initials(a.name))}</div>
-      <div class="acct-main"><div class="acct-name">${esc(a.name)}</div><div class="acct-sub">${esc(sub)}</div></div>
+      <div class="acct-main"><div class="acct-name">${esc(a.name)}</div><div class="acct-sub">${badge}${esc(sub)}</div></div>
       ${reordering ? '' : sparkline(pts, a.color)}
       <div class="acct-right">
         <div class="acct-bal">${isLiab(a) ? '−' : ''}${money(Math.abs(l?.balance ?? 0))}</div>
@@ -556,14 +568,20 @@
       </div>
       <div><div class="detail-bal">${isLiab(a) ? '−' : ''}${money(Math.abs(l?.balance ?? 0))}</div>
         <div class="muted small">Updated ${l ? fmtDate(l.date) : 'never'}</div></div>
+      ${a.plaid ? `<div class="linked-note">${ICONS.link}<span>Connected with Plaid${a.plaid.mask ? ` · ••${esc(a.plaid.mask)}` : ''}. Updates automatically — you can still type a balance below.</span></div>` : ''}
       <div class="detail-chart"><svg id="dChart" class="chart"></svg></div>
       <div class="field"><label for="dBal">New balance</label><div class="money-input"><input id="dBal" inputmode="decimal" placeholder="${l ? l.balance.toFixed(2) : '0.00'}"/></div></div>
       <div class="field"><label for="dDate">As of</label><input id="dDate" type="date" value="${today()}" max="${today()}"/></div>
       <button class="primary-btn" id="dSave">Update balance</button>
       <h2 style="margin-top:6px">History</h2>
       <ul class="history">${hist.map((h) => `<li><span>${fmtDate(h.date)}</span><span><span class="h-val">${money(h.balance)}</span><button class="del" data-del="${h.date}" aria-label="Delete entry">×</button></span></li>`).join('')}</ul>
+      ${a.plaid ? '<button class="ghost-btn" id="dUnlink">Stop automatic updates</button>' : ''}
       <div class="btn-row"><button class="ghost-btn" id="dEdit">Edit</button><button class="danger-btn" id="dDelete">Delete</button></div>
     `, (root) => {
+      if (a.plaid) $('#dUnlink', root).onclick = () => {
+        if (!confirm(`Stop updating “${a.name}” automatically? It stays as a manual account with its history.`)) return;
+        delete a.plaid; save(); render(); accountDetail(a.id); toast('Now a manual account');
+      };
       requestAnimationFrame(() => areaChart($('#dChart', root), accountSeries(a, 'ALL'), { height: 150, colors: [a.color + 'aa', a.color, a.color], axis: true }));
       $('#dSave', root).onclick = () => {
         const v = parseMoney($('#dBal', root).value);
@@ -638,6 +656,12 @@
           <li>Choose <b>Add to Home Screen</b></li>
         </ol>
       </div>
+      <button class="glass setting-row plaid-row" id="sPlaid" style="border-radius:18px;width:100%;text-align:left">
+        <div class="sr-text">
+          <div class="sr-title">${ICONS.bank}Bank connections</div>
+          <p class="hint">${plaidReady() ? `${state.plaid.items.length} connected with Plaid` : 'Set up Plaid to update balances automatically'}</p>
+        </div>${ICONS.chev}
+      </button>
       <div class="settings-list">
         <button class="ghost-btn" id="sExport">Back up data (JSON)</button>
         <button class="ghost-btn" id="sImport">Restore from backup</button>
@@ -665,6 +689,7 @@
           if (e.name !== 'NotAllowedError' && e.name !== 'AbortError') toast("Couldn't set up Face ID");
         } finally { sw.disabled = false; }
       };
+      $('#sPlaid', root).onclick = plaidSettings;
       $('#sExport', root).onclick = exportData;
       $('#sImport', root).onclick = () => $('#sFile', root).click();
       $('#sCsv', root).onclick = () => $('#sCsvFile', root).click();
@@ -674,7 +699,12 @@
           const data = JSON.parse(await f.text());
           if (!Array.isArray(data.accounts)) throw new Error('bad file');
           if (!confirm('Replace all current data with this backup?')) return;
-          state = { accounts: data.accounts, settings: { ...state.settings, ...(data.settings || {}), faceId: state.settings.faceId } };
+          const keep = { faceId: state.settings.faceId, plaidUrl: state.settings.plaidUrl, plaidCode: state.settings.plaidCode };
+          state = {
+            accounts: data.accounts,
+            settings: { ...state.settings, ...(data.settings || {}), ...keep },
+            plaid: data.plaid?.items ? { items: data.plaid.items, lastSync: 0 } : state.plaid,
+          };
           save(); closeSheet(); render(); toast('Backup restored');
         } catch { toast('That file is not a valid backup'); }
       };
@@ -689,14 +719,14 @@
       };
       $('#sClear', root).onclick = () => {
         if (!confirm('Erase all accounts and history from this device?')) return;
-        state = { accounts: [], settings: { hide: false } };
-        save(); closeSheet(); render(); toast('All data erased');
+        eraseAll(); closeSheet(); render(); toast('All data erased');
       };
     });
   }
 
   async function exportData() {
-    const json = JSON.stringify({ app: 'networth', version: 1, exported: new Date().toISOString(), ...state }, null, 2);
+    const json = JSON.stringify({ app: 'networth', version: 1, exported: new Date().toISOString(), ...state,
+      settings: { ...state.settings, plaidCode: undefined, faceId: undefined } }, null, 2);
     const name = `networth-backup-${today()}.json`;
     const file = new File([json], name, { type: 'application/json' });
     if (navigator.canShare?.({ files: [file] })) {
@@ -758,8 +788,9 @@
   $('#btnSettings').innerHTML = ICONS.gear;
   $('#btnSettings').onclick = settingsSheet;
   $('#btnHide').onclick = () => { state.settings.hide = !state.settings.hide; save(); render(); };
-  $('#fab').onclick = () => accountForm();
-  $('#btnFirst').onclick = () => accountForm();
+  $('#fab').onclick = addChooser;
+  $('#btnFirst').onclick = addChooser;
+  $('#syncRow').onclick = () => syncPlaid({ force: true, quiet: false });
   $('#btnDemo').onclick = loadDemo;
   $('#btnQuick').onclick = quickUpdate;
   $('#ranges').onclick = (e) => {
@@ -794,6 +825,240 @@
   let resizeT;
   window.addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(render, 200); });
   // Re-render when returning to the app (e.g. the next day, so "Today" stays current).
+  // ---------------------------------------------------------------- Plaid (automatic balances)
+  // The app talks to your own small server (worker/), which holds the Plaid keys.
+  const SYNC_EVERY_MS = 30 * 60 * 1000;
+  const plaidReady = () => !!(state.settings.plaidUrl && state.settings.plaidCode);
+  const KINDS = {
+    bank: { icon: 'card', title: 'Bank account or credit card', text: 'Checking, savings and credit cards' },
+    investments: { icon: 'chart', title: 'Investments', text: 'Robinhood, brokerage, 401(k), IRA, crypto' },
+    loans: { icon: 'home', title: 'Loans', text: 'Mortgage, student and auto loans' },
+  };
+
+  async function plaidApi(path, body, cfg = state.settings) {
+    let res;
+    try {
+      res = await fetch(cfg.plaidUrl.replace(/\/+$/, '') + path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + cfg.plaidCode },
+        body: JSON.stringify(body || {}),
+      });
+    } catch { throw new Error("Can't reach your Plaid server — check the address"); }
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw Object.assign(new Error(data.error || `Server error (${res.status})`), { code: data.code });
+    return data;
+  }
+
+  let plaidScript = null;
+  function loadPlaidLink() {
+    if (window.Plaid) return Promise.resolve();
+    return (plaidScript ||= new Promise((ok, fail) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdn.plaid.com/link/v2/stable/link-initialize.js';
+      s.onload = ok;
+      s.onerror = () => { plaidScript = null; s.remove(); fail(new Error("Couldn't load Plaid — check your connection")); };
+      document.head.appendChild(s);
+    }));
+  }
+
+  /** Opens Plaid Link. Resolves with {public_token, metadata}, or null if the user closed it. */
+  function openLink(token) {
+    return new Promise((resolve, reject) => {
+      let h;
+      h = window.Plaid.create({
+        token,
+        onSuccess: (public_token, metadata) => { resolve({ public_token, metadata }); h?.destroy?.(); },
+        onExit: (err) => {
+          h?.destroy?.();
+          err ? reject(Object.assign(new Error(err.display_message || err.error_message || 'Plaid was closed'), { code: err.error_code })) : resolve(null);
+        },
+      });
+      h.open();
+    });
+  }
+
+  function mapPlaidType({ type, subtype }) {
+    const st = String(subtype || '').toLowerCase();
+    if (type === 'credit') return 'credit';
+    if (type === 'loan') return /mortgage|home equity/.test(st) ? 'mortgage' : st === 'auto' ? 'auto' : st === 'student' ? 'student' : 'loan';
+    if (type === 'investment' || type === 'brokerage') {
+      if (/crypto/.test(st)) return 'crypto';
+      if (/401|403|457|ira|roth|retirement|pension|keogh|sep|simple|thrift|profit sharing|rrsp|tfsa|rrif|lira/.test(st)) return 'retirement';
+      return 'brokerage';
+    }
+    if (type === 'depository') return /checking|paypal|prepaid|cash management/.test(st) ? 'checking' : 'savings';
+    return 'other';
+  }
+
+  /** Writes today's Plaid balances into matching accounts; optionally creates new ones. Returns # created. */
+  function applyPlaidAccounts(item, accounts, addNew) {
+    let created = 0;
+    for (const pa of accounts) {
+      let a = state.accounts.find((x) => x.plaid?.accountId === pa.id);
+      if (!a && !addNew) continue;
+      if (!a) {
+        a = {
+          id: uid(), name: pa.name || pa.official_name || 'Account', institution: item.institution,
+          type: mapPlaidType(pa), color: SWATCHES[state.accounts.length % SWATCHES.length], history: [],
+          plaid: { itemId: item.id, accountId: pa.id, mask: pa.mask || '' },
+        };
+        state.accounts.push(a);
+        created++;
+      }
+      const v = pa.current ?? pa.available;
+      if (v == null || !isFinite(v)) continue;
+      setBalance(a, today(), isLiab(a) ? Math.abs(v) : v);
+    }
+    return created;
+  }
+
+  async function connectPlaid(kind) {
+    closeSheet();
+    try {
+      toast('Opening Plaid…');
+      const [{ link_token }] = await Promise.all([plaidApi('/link-token', { kind }), loadPlaidLink()]);
+      const r = await openLink(link_token);
+      if (!r) return;
+      toast('Connecting…');
+      const { item, accounts } = await plaidApi('/exchange', { public_token: r.public_token });
+      const rec = { id: item.id, enc: item.enc, institution: r.metadata?.institution?.name || 'Bank', kind, error: null };
+      state.plaid.items = state.plaid.items.filter((i) => i.id !== rec.id).concat(rec);
+      const n = applyPlaidAccounts(rec, accounts, true);
+      state.plaid.lastSync = Date.now();
+      save(); render();
+      toast(n ? `Added ${n} account${n === 1 ? '' : 's'} from ${rec.institution}` : `${rec.institution} is connected`);
+    } catch (e) { toast(e.message || 'Plaid connection failed'); }
+  }
+
+  async function reconnectPlaid(item) {
+    try {
+      const [{ link_token }] = await Promise.all([plaidApi('/link-token', { item: item.enc }), loadPlaidLink()]);
+      const r = await openLink(link_token);
+      if (!r) return;
+      item.error = null; save();
+      await syncPlaid({ force: true, quiet: false });
+    } catch (e) { toast(e.message); }
+  }
+
+  async function removePlaid(item) {
+    if (!confirm(`Disconnect ${item.institution}? Its accounts stay in the app as manual accounts.`)) return;
+    try { await plaidApi('/remove', { item: item.enc }); }
+    catch (e) { if (!confirm(`${e.message}\n\nRemove it from this app anyway?`)) return; }
+    state.plaid.items = state.plaid.items.filter((i) => i !== item);
+    for (const a of state.accounts) if (a.plaid?.itemId === item.id) delete a.plaid;
+    save(); render(); toast(`${item.institution} disconnected`);
+  }
+
+  let syncing = false;
+  async function syncPlaid({ force = false, quiet = true } = {}) {
+    if (!plaidReady() || !state.plaid.items.length || syncing) return;
+    if (!force && Date.now() - (state.plaid.lastSync || 0) < SYNC_EVERY_MS) return;
+    syncing = true; renderSyncRow();
+    try {
+      const { results } = await plaidApi('/accounts', { items: state.plaid.items.map((i) => i.enc) });
+      results.forEach((r, i) => {
+        const item = state.plaid.items[i];
+        if (!item) return;
+        if (r.ok) { item.error = null; applyPlaidAccounts(item, r.accounts, false); }
+        else item.error = r.error;
+      });
+      state.plaid.lastSync = Date.now();
+      save();
+      const bad = state.plaid.items.filter((i) => i.error);
+      if (bad.length) toast(`${bad[0].institution} needs to be reconnected — see Settings`);
+      else if (!quiet) toast('Balances updated');
+    } catch (e) { if (!quiet) toast(e.message); }
+    finally { syncing = false; if (!isLocked()) render(); else renderSyncRow(); }
+  }
+
+  function ago(ts) {
+    const m = Math.round((Date.now() - ts) / 60000);
+    if (!ts) return 'never';
+    if (m < 1) return 'just now';
+    if (m < 60) return `${m} min ago`;
+    const h = Math.round(m / 60);
+    return h < 24 ? `${h} hr ago` : `${Math.round(h / 24)} d ago`;
+  }
+
+  function renderSyncRow() {
+    const row = $('#syncRow');
+    row.hidden = !(plaidReady() && state.plaid.items.length);
+    if (row.hidden) return;
+    const bad = state.plaid.items.some((i) => i.error);
+    row.classList.toggle('spinning', syncing);
+    row.classList.toggle('bad', bad);
+    row.innerHTML = `${ICONS.sync}<span>${syncing ? 'Updating balances…' : bad ? 'A bank needs reconnecting — open Settings' : `Bank balances updated ${ago(state.plaid.lastSync)}`}</span>${syncing || bad ? '' : '<b>Refresh</b>'}`;
+  }
+
+  function addChooser() {
+    openSheet(`
+      <h3>Add account</h3>
+      <button class="choice" id="cPlaid"><span class="choice-icon" style="--c1:#00E096;--c2:#00D4FF">${ICONS.bank}</span>
+        <span><b>Connect automatically</b><span>Link a bank, card, loan or brokerage with Plaid. Balances update on their own.</span></span></button>
+      <button class="choice" id="cManual"><span class="choice-icon" style="--c1:#7C5CFF;--c2:#FF4D9D">${ICONS.pencil}</span>
+        <span><b>Add manually</b><span>Type in a balance and update it whenever you like.</span></span></button>
+    `, (r) => {
+      $('#cManual', r).onclick = () => accountForm();
+      $('#cPlaid', r).onclick = () => (plaidReady() ? kindChooser() : plaidSettings());
+    });
+  }
+
+  function kindChooser() {
+    openSheet(`
+      <h3>What are you connecting?</h3>
+      ${Object.entries(KINDS).map(([k, v]) => `<button class="choice" data-kind="${k}"><span class="choice-icon">${ICONS[v.icon]}</span>
+        <span><b>${v.title}</b><span>${v.text}</span></span></button>`).join('')}
+      <p class="hint">Plaid opens in a secure window. You sign in to your bank there — this app never sees your password.</p>
+    `, (r) => r.querySelectorAll('[data-kind]').forEach((b) => (b.onclick = () => connectPlaid(b.dataset.kind))));
+  }
+
+  function plaidSettings() {
+    const items = state.plaid.items;
+    openSheet(`
+      <h3>Bank connections</h3>
+      <p class="hint">Plaid links your accounts so balances update automatically. It needs your own small Plaid server — the README in your GitHub repo walks you through setting it up.</p>
+      <div class="field"><label for="pUrl">Server address</label><input id="pUrl" type="url" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="https://networth-plaid.yourname.workers.dev" value="${esc(state.settings.plaidUrl || '')}"/></div>
+      <div class="field"><label for="pCode">Access code</label><input id="pCode" type="password" autocomplete="off" placeholder="The APP_TOKEN you chose" value="${esc(state.settings.plaidCode || '')}"/></div>
+      <button class="primary-btn" id="pSave">Save &amp; test</button>
+      <p class="hint" id="pStatus"></p>
+      ${items.length ? `<h2 style="margin-top:4px">Connected</h2>
+        <ul class="conns">${items.map((it, i) => `<li>
+          <span class="choice-icon small">${ICONS[KINDS[it.kind]?.icon || 'bank']}</span>
+          <span class="c-main"><b>${esc(it.institution)}</b><span class="${it.error ? 'down' : 'muted'}">${it.error ? esc(it.error.message || 'Needs attention') : `${state.accounts.filter((a) => a.plaid?.itemId === it.id).length} accounts`}</span></span>
+          ${it.error ? `<button class="chip-btn" data-fix="${i}">Reconnect</button>` : ''}
+          <button class="chip-btn alt" data-rm="${i}">Remove</button></li>`).join('')}</ul>
+        <button class="ghost-btn" id="pSync">${ICONS.sync} Refresh balances now</button>` : ''}
+      ${plaidReady() ? '<button class="primary-btn" id="pAdd">Connect an account</button>' : ''}
+    `, (r) => {
+      $('#pSave', r).onclick = async () => {
+        const cfg = { plaidUrl: $('#pUrl', r).value.trim(), plaidCode: $('#pCode', r).value.trim() };
+        const st = $('#pStatus', r);
+        if (!/^https:\/\/.+/i.test(cfg.plaidUrl)) { st.className = 'hint down'; st.textContent = 'Enter the full https:// address of your server.'; return; }
+        if (!cfg.plaidCode) { st.className = 'hint down'; st.textContent = 'Enter your access code.'; return; }
+        st.className = 'hint'; st.textContent = 'Testing…';
+        try {
+          const res = await plaidApi('/ping', {}, cfg);
+          Object.assign(state.settings, cfg); save();
+          toast(`Connected to your Plaid server (${res.env})`);
+          plaidSettings();
+        } catch (e) { st.className = 'hint down'; st.textContent = e.message; }
+      };
+      r.querySelectorAll('[data-fix]').forEach((b) => (b.onclick = () => { closeSheet(); reconnectPlaid(items[+b.dataset.fix]); }));
+      r.querySelectorAll('[data-rm]').forEach((b) => (b.onclick = async () => { await removePlaid(items[+b.dataset.rm]); plaidSettings(); }));
+      if ($('#pSync', r)) $('#pSync', r).onclick = () => { closeSheet(); syncPlaid({ force: true, quiet: false }); };
+      if ($('#pAdd', r)) $('#pAdd', r).onclick = kindChooser;
+    });
+  }
+
+  /** Wipes local data; also asks the server to disconnect banks so Plaid stops billing for them. */
+  function eraseAll() {
+    if (plaidReady()) for (const it of state.plaid.items) plaidApi('/remove', { item: it.enc }).catch(() => {});
+    const keep = { plaidUrl: state.settings.plaidUrl, plaidCode: state.settings.plaidCode };
+    state = freshState();
+    Object.assign(state.settings, keep);
+    save();
+  }
+
   // ---------------------------------------------------------------- Face ID lock
   // Uses a passkey (WebAuthn) stored on this iPhone; iOS asks for Face ID (or the passcode) to use it.
   const LOCK_GRACE_MS = 60 * 1000; // re-lock after the app has been in the background this long
@@ -893,8 +1158,7 @@
   $('#btnLockHelp').onclick = () => { $('#lockHelp').hidden = !$('#lockHelp').hidden; };
   $('#btnLockReset').onclick = () => {
     if (!confirm('Erase all accounts and history on this device and turn off the Face ID lock?')) return;
-    state = { accounts: [], settings: { hide: false } };
-    save(); unlock(); toast('Data erased — restore a backup from Settings');
+    eraseAll(); unlock(); toast('Data erased — restore a backup from Settings');
   };
 
   let hiddenAt = 0;
@@ -907,9 +1171,11 @@
     root.classList.remove('shield');
     if (state.settings.faceId && !isLocked() && Date.now() - hiddenAt > LOCK_GRACE_MS) { lock(); tryUnlock(); return; }
     if (!isLocked()) render();
+    syncPlaid();
   });
 
   render();
+  syncPlaid();
   if (state.settings.faceId) { lock(); tryUnlock(); }
   else if (!state.settings.faceIdOffered && state.accounts.length) {
     faceIdAvailable().then((ok) => { if (ok) offerFaceId(); });

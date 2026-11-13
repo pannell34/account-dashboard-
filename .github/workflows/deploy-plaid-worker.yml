@@ -1,0 +1,62 @@
+name: Deploy Plaid server
+
+# Publishes worker/ to Cloudflare Workers. Needs these repository secrets:
+#   CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, PLAID_CLIENT_ID, PLAID_SECRET, APP_TOKEN
+# Optional repository variable: PLAID_ENV (sandbox | production), defaults to sandbox.
+
+on:
+  push:
+    branches: [main]
+    paths: ['worker/**', '.github/workflows/deploy-plaid-worker.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: plaid-worker
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check that the secrets are set up
+        id: check
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PLAID_CLIENT_ID: ${{ secrets.PLAID_CLIENT_ID }}
+          PLAID_SECRET: ${{ secrets.PLAID_SECRET }}
+          APP_TOKEN: ${{ secrets.APP_TOKEN }}
+        run: |
+          missing=""
+          for v in CF_TOKEN CF_ACCOUNT PLAID_CLIENT_ID PLAID_SECRET APP_TOKEN; do
+            [ -z "${!v}" ] && missing="$missing $v"
+          done
+          if [ -n "$missing" ]; then
+            echo "::notice::Plaid server not deployed yet — missing repository secrets:$missing (see README)."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.check.outputs.ready == 'true'
+
+      - name: Deploy to Cloudflare
+        if: steps.check.outputs.ready == 'true'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: worker
+          command: deploy --var PLAID_ENV:${{ vars.PLAID_ENV || 'sandbox' }}
+          secrets: |
+            PLAID_CLIENT_ID
+            PLAID_SECRET
+            APP_TOKEN
+        env:
+          PLAID_CLIENT_ID: ${{ secrets.PLAID_CLIENT_ID }}
+          PLAID_SECRET: ${{ secrets.PLAID_SECRET }}
+          APP_TOKEN: ${{ secrets.APP_TOKEN }}
