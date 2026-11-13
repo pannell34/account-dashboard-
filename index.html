@@ -15,6 +15,10 @@
   <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="stylesheet" href="styles.css" />
+  <script>
+    // Hide everything before first paint when the Face ID lock is on.
+    try { var s = JSON.parse(localStorage.getItem('networth.v1')); if (s && s.settings && s.settings.faceId) document.documentElement.classList.add('locked'); } catch (e) {}
+  </script>
 </head>
 <body>
   <div class="bg-blobs" aria-hidden="true"><span></span><span></span><span></span></div>
@@ -92,6 +96,21 @@
     <div class="sheet-panel" role="dialog" aria-modal="true">
       <div class="grabber" data-close></div>
       <div id="sheetBody"></div>
+    </div>
+  </div>
+
+  <div class="lock" id="lock">
+    <div class="lock-inner">
+      <div class="empty-icon">$</div>
+      <h2>Net Worth is locked</h2>
+      <p class="muted">Use Face ID to see your accounts.</p>
+      <button class="primary-btn face-btn" id="btnUnlock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3H5a2 2 0 0 0-2 2v2M17 3h2a2 2 0 0 1 2 2v2M7 21H5a2 2 0 0 1-2-2v-2M17 21h2a2 2 0 0 0 2-2v-2M9 9v1.5M15 9v1.5M12 9v4.5h-1M9.2 16.2a4 4 0 0 0 5.6 0"/></svg><span>Unlock with Face ID</span></button>
+      <p class="lock-msg" id="lockMsg"></p>
+      <button class="link-btn" id="btnLockHelp">Having trouble?</button>
+      <div class="lock-help" id="lockHelp" hidden>
+        <p class="hint">If Face ID doesn't recognize you, iPhone offers your passcode instead. If the Face ID key for this app was deleted from your iPhone (Settings → Passwords), the only way back in is to erase this app's data, then restore from a backup.</p>
+        <button class="danger-btn" id="btnLockReset">Erase data and turn off lock</button>
+      </div>
     </div>
   </div>
 

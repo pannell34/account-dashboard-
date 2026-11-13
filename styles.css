@@ -302,3 +302,41 @@ h2 { font-size: 17px; margin: 0; font-weight: 700; }
 
 @keyframes pulse { 0% { r: 4; opacity: 1; } 100% { r: 14; opacity: 0; } }
 .pulse { animation: pulse 1.8s ease-out infinite; }
+
+/* ---------- Face ID lock ---------- */
+.lock {
+  position: fixed; inset: 0; z-index: 40; display: none; align-items: center; justify-content: center;
+  padding: calc(var(--safe-top) + 24px) 28px calc(var(--safe-bottom) + 24px);
+  background: radial-gradient(120% 80% at 20% 0%, rgba(124,92,255,.35), transparent 60%),
+              radial-gradient(100% 70% at 100% 100%, rgba(0,212,255,.22), transparent 60%), var(--bg);
+}
+html.locked .lock { display: flex; }
+html.locked main, html.locked .topbar, html.locked .fab, html.locked .sheet { visibility: hidden !important; }
+html.shield main { filter: blur(24px); }
+.lock-inner { width: 100%; max-width: 360px; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
+.lock-inner h2 { font-size: 22px; margin-top: 8px; }
+.lock-inner p { margin: 0; }
+.face-btn { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 14px; }
+.face-btn svg { width: 24px; height: 24px; }
+.lock-msg { min-height: 18px; font-size: 13px; color: var(--amber); }
+.link-btn { color: var(--muted); font-size: 14px; text-decoration: underline; padding: 6px; }
+.lock-help { display: flex; flex-direction: column; gap: 12px; text-align: left; }
+
+/* settings switch */
+.setting-row { display: flex; align-items: center; gap: 14px; padding: 14px; }
+.sr-text { flex: 1; min-width: 0; }
+.sr-title { font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.sr-title svg { width: 20px; height: 20px; color: var(--cyan); }
+.sr-text .hint { margin-top: 4px; }
+.switch { position: relative; width: 52px; height: 32px; flex: none; }
+.switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; z-index: 1; }
+.switch span { position: absolute; inset: 0; border-radius: 999px; background: rgba(255,255,255,.16); transition: background .25s; }
+.switch span::after {
+  content: ""; position: absolute; top: 3px; left: 3px; width: 26px; height: 26px; border-radius: 50%;
+  background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,.35); transition: transform .25s cubic-bezier(.2,.9,.25,1);
+}
+.switch input:checked + span { background: linear-gradient(135deg, var(--up), var(--cyan)); }
+.switch input:checked + span::after { transform: translateX(20px); }
+.switch input:disabled + span { opacity: .4; }
+.offer { text-align: center; align-items: center; }
+.offer .empty-icon svg { width: 44px; height: 44px; }
