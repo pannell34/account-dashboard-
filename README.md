@@ -10,6 +10,7 @@ A dark, colorful app for keeping track of all your accounts (Robinhood, banks, 4
 - **Collapsible Assets and Liabilities drop-downs** with totals. Tap **Reorder** and drag the ⋮⋮ handle to put accounts in any order you like.
 - **Account cards** with sparklines and change over the selected range. Tap one for its own chart, its balance history and editing.
 - **Update balances** fills in every account on one screen. It's quick to do weekly while you look at Robinhood.
+- **Face ID lock** (optional): offered the first time you open the app, and switchable in Settings → Require Face ID. It locks on launch and again after the app has been in the background for a minute. It works by saving a passkey on the iPhone, and iOS uses Face ID (or your passcode) to unlock it.
 - **Privacy toggle** (eye icon) hides every dollar amount.
 - **Backup / restore** as JSON and **CSV import** (`date,account,balance[,type]`).
 - No servers and no logins. Data stays in the phone's local storage.

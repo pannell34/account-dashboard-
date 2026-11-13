@@ -27,6 +27,7 @@
     eyeOff: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.9 17.9A10.4 10.4 0 0 1 12 19c-6.5 0-10-7-10-7a18 18 0 0 1 4.1-5.1M9.9 5.2A9.6 9.6 0 0 1 12 5c6.5 0 10 7 10 7a18 18 0 0 1-2.2 3.2M14.1 14.1a3 3 0 1 1-4.2-4.2M2 2l20 20"/></svg>',
     chev: '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>',
     grip: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.7"/><circle cx="15" cy="6" r="1.7"/><circle cx="9" cy="12" r="1.7"/><circle cx="15" cy="12" r="1.7"/><circle cx="9" cy="18" r="1.7"/><circle cx="15" cy="18" r="1.7"/></svg>',
+    face: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3H5a2 2 0 0 0-2 2v2M17 3h2a2 2 0 0 1 2 2v2M7 21H5a2 2 0 0 1-2-2v-2M17 21h2a2 2 0 0 0 2-2v-2M9 9v1.5M15 9v1.5M12 9v4.5h-1M9.2 16.2a4 4 0 0 0 5.6 0"/></svg>',
     gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
   };
 
@@ -619,8 +620,16 @@
   }
 
   function settingsSheet() {
+    const on = !!state.settings.faceId;
     openSheet(`
       <h3>Settings</h3>
+      <div class="glass setting-row" style="border-radius:18px">
+        <div class="sr-text">
+          <div class="sr-title">${ICONS.face}Require Face ID</div>
+          <p class="hint" id="fidHint">Ask for Face ID every time you open the app.</p>
+        </div>
+        <label class="switch"><input type="checkbox" id="sFace" ${on ? 'checked' : ''} aria-label="Require Face ID"/><span></span></label>
+      </div>
       <div class="glass card" style="padding:14px">
         <h2 style="margin-bottom:8px">Install on iPhone</h2>
         <ol class="install-steps">
@@ -640,6 +649,22 @@
       <input type="file" id="sFile" accept=".json,application/json" hidden/>
       <input type="file" id="sCsvFile" accept=".csv,text/csv,text/plain" hidden/>
     `, (root) => {
+      const sw = $('#sFace', root);
+      faceIdAvailable().then((ok) => {
+        if (ok || state.settings.faceId) return;
+        sw.disabled = true;
+        $('#fidHint', root).textContent = "Face ID isn't available here. Open the app from your iPhone home screen (iOS 16 or later).";
+      });
+      sw.onchange = async () => {
+        sw.disabled = true;
+        try {
+          if (sw.checked) { await enableFaceId(); toast('Face ID lock is on'); }
+          else { await verifyFaceId(); state.settings.faceId = null; save(); toast('Face ID lock is off'); }
+        } catch (e) {
+          sw.checked = !sw.checked;
+          if (e.name !== 'NotAllowedError' && e.name !== 'AbortError') toast("Couldn't set up Face ID");
+        } finally { sw.disabled = false; }
+      };
       $('#sExport', root).onclick = exportData;
       $('#sImport', root).onclick = () => $('#sFile', root).click();
       $('#sCsv', root).onclick = () => $('#sCsvFile', root).click();
@@ -649,7 +674,7 @@
           const data = JSON.parse(await f.text());
           if (!Array.isArray(data.accounts)) throw new Error('bad file');
           if (!confirm('Replace all current data with this backup?')) return;
-          state = { accounts: data.accounts, settings: { ...state.settings, ...(data.settings || {}) } };
+          state = { accounts: data.accounts, settings: { ...state.settings, ...(data.settings || {}), faceId: state.settings.faceId } };
           save(); closeSheet(); render(); toast('Backup restored');
         } catch { toast('That file is not a valid backup'); }
       };
@@ -769,9 +794,126 @@
   let resizeT;
   window.addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(render, 200); });
   // Re-render when returning to the app (e.g. the next day, so "Today" stays current).
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) render(); });
+  // ---------------------------------------------------------------- Face ID lock
+  // Uses a passkey (WebAuthn) stored on this iPhone; iOS asks for Face ID (or the passcode) to use it.
+  const LOCK_GRACE_MS = 60 * 1000; // re-lock after the app has been in the background this long
+  const root = document.documentElement;
+  const rand = (n) => crypto.getRandomValues(new Uint8Array(n));
+  const b64u = {
+    enc: (buf) => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''),
+    dec: (s) => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4)), (c) => c.charCodeAt(0)),
+  };
+
+  async function faceIdAvailable() {
+    try {
+      return !!(window.isSecureContext && window.PublicKeyCredential &&
+        await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable());
+    } catch { return false; }
+  }
+
+  async function enableFaceId() {
+    const cred = await navigator.credentials.create({
+      publicKey: {
+        challenge: rand(32),
+        rp: { name: 'Net Worth', id: location.hostname },
+        user: { id: rand(16), name: 'Net Worth app lock', displayName: 'Net Worth' },
+        pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+        authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'preferred' },
+        attestation: 'none',
+        timeout: 60000,
+      },
+    });
+    state.settings.faceId = { id: b64u.enc(cred.rawId) };
+    state.settings.faceIdOffered = true;
+    save();
+  }
+
+  async function verifyFaceId(signal) {
+    const fid = state.settings.faceId;
+    if (!fid) return true;
+    const a = await navigator.credentials.get({
+      signal,
+      publicKey: {
+        challenge: rand(32),
+        rpId: location.hostname,
+        allowCredentials: [{ type: 'public-key', id: b64u.dec(fid.id), transports: ['internal'] }],
+        userVerification: 'required',
+        timeout: 60000,
+      },
+    });
+    // Byte 32 of authenticatorData holds the flags; 0x04 = user verified (Face ID / passcode).
+    if (!(new Uint8Array(a.response.authenticatorData)[32] & 0x04)) throw new Error('Not verified');
+    return true;
+  }
+
+  const isLocked = () => root.classList.contains('locked');
+  function lock() {
+    if (!state.settings.faceId) return;
+    closeSheet();
+    $('#lockMsg').textContent = '';
+    $('#lockHelp').hidden = true;
+    root.classList.add('locked');
+  }
+  function unlock() { root.classList.remove('locked', 'shield'); render(); }
+
+  let pending = null; // AbortController of the Face ID request in flight
+  async function tryUnlock() {
+    if (!isLocked()) return;
+    pending?.abort(); // a tap replaces any prompt that is still waiting
+    const ctl = pending = new AbortController();
+    $('#lockMsg').textContent = '';
+    try {
+      await verifyFaceId(ctl.signal);
+      if (ctl === pending) unlock();
+    } catch (e) {
+      if (ctl !== pending || e.name === 'AbortError') return;
+      $('#lockMsg').textContent = e.name === 'NotAllowedError' ? 'Tap the button to try again.' : "Couldn't verify — try again.";
+    } finally { if (ctl === pending) pending = null; }
+  }
+
+  function offerFaceId() {
+    state.settings.faceIdOffered = true; save();
+    openSheet(`
+      <div class="sheet-body offer">
+        <div class="empty-icon">${ICONS.face}</div>
+        <h3 style="margin:6px 0 0">Lock with Face ID?</h3>
+        <p class="muted" style="margin:0">Require Face ID each time you open Net Worth, so nobody else can see your balances. You can change this any time in Settings.</p>
+        <button class="primary-btn face-btn" id="oOn">${ICONS.face}<span>Turn on Face ID</span></button>
+        <button class="ghost-btn" id="oLater">Not now</button>
+      </div>`, (r) => {
+      $('#oLater', r).onclick = closeSheet;
+      $('#oOn', r).onclick = async () => {
+        try { await enableFaceId(); closeSheet(); toast('Face ID lock is on'); }
+        catch (e) { if (e.name !== 'NotAllowedError' && e.name !== 'AbortError') toast("Couldn't set up Face ID"); }
+      };
+    });
+  }
+
+  $('#btnUnlock').onclick = tryUnlock;
+  $('#btnLockHelp').onclick = () => { $('#lockHelp').hidden = !$('#lockHelp').hidden; };
+  $('#btnLockReset').onclick = () => {
+    if (!confirm('Erase all accounts and history on this device and turn off the Face ID lock?')) return;
+    state = { accounts: [], settings: { hide: false } };
+    save(); unlock(); toast('Data erased — restore a backup from Settings');
+  };
+
+  let hiddenAt = 0;
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      hiddenAt = Date.now();
+      if (state.settings.faceId && !isLocked()) root.classList.add('shield'); // blur the app-switcher snapshot
+      return;
+    }
+    root.classList.remove('shield');
+    if (state.settings.faceId && !isLocked() && Date.now() - hiddenAt > LOCK_GRACE_MS) { lock(); tryUnlock(); return; }
+    if (!isLocked()) render();
+  });
 
   render();
+  if (state.settings.faceId) { lock(); tryUnlock(); }
+  else if (!state.settings.faceIdOffered && state.accounts.length) {
+    faceIdAvailable().then((ok) => { if (ok) offerFaceId(); });
+  }
 
   if ('serviceWorker' in navigator && location.protocol !== 'file:') {
     navigator.serviceWorker.register('sw.js').catch(() => {});
