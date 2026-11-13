@@ -1,0 +1,14 @@
+name = "networth-plaid"
+main = "src/index.js"
+compatibility_date = "2025-06-01"
+workers_dev = true
+
+[vars]
+# "sandbox" for Plaid's test banks, "production" for your real accounts.
+# The GitHub workflow overrides this with the PLAID_ENV repository variable when it is set.
+PLAID_ENV = "sandbox"
+# Only these sites may call the server (comma-separated).
+ALLOWED_ORIGIN = "https://pannell34.github.io"
+
+# Secrets — never put these in this file:
+#   PLAID_CLIENT_ID, PLAID_SECRET, APP_TOKEN
