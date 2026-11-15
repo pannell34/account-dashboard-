@@ -36,35 +36,58 @@
 
   <main id="app">
     <section class="hero glass">
+      <div class="view-toggle" id="viewToggle" role="tablist" aria-label="Chart">
+        <button data-view="net" role="tab">Net worth</button>
+        <button data-view="assets" role="tab">Assets</button>
+        <button data-view="liabs" role="tab">Liabilities</button>
+      </div>
       <div class="hero-label" id="heroLabel">Total net worth</div>
       <div class="hero-total" id="netTotal">$0.00</div>
       <div class="hero-change" id="netChange"></div>
-      <div class="chart-wrap"><svg id="mainChart" class="chart"></svg></div>
+      <div class="chart-wrap">
+        <svg id="mainChart" class="chart"></svg>
+        <div class="donut-view" id="donutView" hidden>
+          <svg id="donut" class="donut" viewBox="0 0 180 180"></svg>
+          <ul class="legend" id="legend"></ul>
+        </div>
+      </div>
       <div class="ranges" id="ranges"></div>
     </section>
 
     <section class="stats" id="stats"></section>
 
     <section class="glass card">
-      <div class="card-head"><h2>Assets</h2><span class="muted small" id="allocNote"></span></div>
-      <div class="donut-row">
-        <svg id="donut" class="donut" viewBox="0 0 180 180"></svg>
-        <ul class="legend" id="legend"></ul>
-      </div>
-    </section>
-
-    <section class="glass card">
-      <div class="card-head"><h2>Liabilities</h2><span class="muted small" id="liabNote"></span></div>
-      <div class="donut-row">
-        <svg id="donutL" class="donut" viewBox="0 0 180 180"></svg>
-        <ul class="legend" id="legendL"></ul>
-      </div>
+      <div class="card-head"><h2>Growth</h2><span class="muted small">net worth</span></div>
+      <div class="growth-grid" id="growth"></div>
+      <p class="growth-avg" id="growthAvg"></p>
     </section>
 
     <section class="glass card">
       <div class="card-head"><h2>Monthly change</h2><span class="muted small">last 12 months</span></div>
       <svg id="bars" class="chart bars"></svg>
       <p class="muted small empty-note" id="barsEmpty" hidden>Update your balances across a few months to see trends here.</p>
+    </section>
+
+    <section class="glass card" id="forecastCard">
+      <div class="card-head"><h2>Growth estimator</h2><span class="muted small">forecast</span></div>
+      <div class="fc-head">
+        <div class="muted small" id="fcLabel"></div>
+        <div class="fc-total" id="fcTotal"></div>
+        <div class="fc-break" id="fcBreak"></div>
+      </div>
+      <div class="fc-chart"><svg id="fcChart" class="chart"></svg></div>
+      <div class="chips fc-years" id="fcYears"></div>
+      <div class="field">
+        <label for="fcRate">Growth per year <b id="fcRateVal"></b></label>
+        <input type="range" id="fcRate" min="0" max="20" step="0.5" />
+        <div class="chips" id="fcRates"></div>
+      </div>
+      <div class="field">
+        <label for="fcMonthly">Added each month</label>
+        <div class="money-input"><input id="fcMonthly" inputmode="decimal" autocomplete="off" /></div>
+        <p class="hint" id="fcHint"></p>
+      </div>
+      <p class="hint">An estimate only — real returns go up and down. Growth is applied monthly to a positive net worth.</p>
     </section>
 
     <section class="accounts">
