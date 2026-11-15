@@ -405,3 +405,74 @@ html.shield main { filter: blur(24px); }
 .celebrate.out { opacity: 0 !important; }
 .preview-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
 .preview-row .ghost-btn { padding: 12px 6px; font-size: 13px; }
+
+/* ---------- hero view toggle ---------- */
+.view-toggle {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; margin-bottom: 14px;
+  border-radius: 14px; background: rgba(0,0,0,.25); border: 1px solid var(--border);
+}
+.view-toggle button { padding: 8px 4px; border-radius: 10px; font-size: 13px; font-weight: 700; color: var(--muted); transition: background .2s, color .2s; }
+.view-toggle button.active { color: #fff; background: linear-gradient(135deg, rgba(124,92,255,.6), rgba(0,212,255,.4)); box-shadow: 0 4px 14px rgba(124,92,255,.3); }
+.view-toggle button[data-view="assets"].active { background: linear-gradient(135deg, rgba(0,224,150,.5), rgba(0,212,255,.35)); }
+.view-toggle button[data-view="liabs"].active { background: linear-gradient(135deg, rgba(255,77,157,.55), rgba(255,138,61,.4)); }
+.donut-view { display: flex; align-items: center; gap: 14px; min-height: 210px; padding: 6px 18px 0; cursor: pointer; animation: fadeIn .35s ease; }
+.donut-view .donut { width: 168px; height: 168px; }
+.donut-view .legend .name small { display: block; font-size: 11px; color: var(--muted); }
+.see-all { color: var(--cyan); font-size: 13px; font-weight: 700; padding: 2px 0; }
+#mainChart { animation: fadeIn .35s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+/* ---------- tappable stat tiles ---------- */
+.stat { text-align: left; width: 100%; cursor: pointer; transition: transform .15s; }
+.stat:active { transform: scale(.96); }
+.stat .chev { opacity: .6; font-weight: 800; }
+
+/* ---------- growth ---------- */
+.growth-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.g-tile { padding: 11px 10px; border-radius: 14px; background: rgba(255,255,255,.04); border: 1px solid var(--border); min-width: 0; }
+.g-k { font-size: 12px; color: var(--muted); font-weight: 600; }
+.g-v { font-size: 17px; font-weight: 800; margin-top: 4px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.g-d { font-size: 11px; color: var(--muted); margin-top: 3px; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.g-tile.none .g-v { color: var(--muted); }
+.gr-bar { height: 4px; border-radius: 2px; background: rgba(255,255,255,.07); margin-top: 6px; overflow: hidden; }
+.gr-bar span { display: block; height: 100%; border-radius: 2px; }
+.gr-bar span.up { background: linear-gradient(90deg, #00E096, #00D4FF); }
+.gr-bar span.down { background: linear-gradient(90deg, #FF4D9D, #FF3B5C); }
+.growth-avg { margin: 12px 2px 0; font-size: 13px; color: var(--muted); line-height: 1.45; }
+
+/* ---------- group list sheet ---------- */
+.gs-total { font-size: 32px; font-weight: 800; letter-spacing: -.5px; font-variant-numeric: tabular-nums; margin-top: -6px; }
+.gs-list { display: flex; flex-direction: column; gap: 8px; }
+.gs-row { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 16px; text-align: left; width: 100%;
+  background: rgba(255,255,255,.045); border: 1px solid rgba(255,255,255,.06); transition: transform .15s; }
+.gs-row:active { transform: scale(.98); }
+.gs-main { flex: 1; min-width: 0; }
+.gs-top, .gs-sub { display: flex; justify-content: space-between; gap: 8px; }
+.gs-name { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gs-bal { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.gs-sub { font-size: 12px; color: var(--muted); margin-top: 3px; }
+.gs-sub span:first-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gs-bar { height: 6px; border-radius: 3px; background: rgba(255,255,255,.07); margin-top: 7px; overflow: hidden; }
+.gs-bar span { display: block; height: 100%; border-radius: 3px; box-shadow: 0 0 8px currentColor; }
+
+/* ---------- growth estimator ---------- */
+#forecastCard { display: flex; flex-direction: column; gap: 14px; }
+#forecastCard .card-head { margin-bottom: -4px; }
+.fc-total { font-size: 32px; font-weight: 800; letter-spacing: -.5px; font-variant-numeric: tabular-nums; margin-top: 2px;
+  background: linear-gradient(90deg, #fff, #b8f3ff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.fc-break { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 6px; font-size: 12px; color: var(--muted); }
+.fc-break i { display: inline-block; width: 8px; height: 8px; border-radius: 3px; margin-right: 5px; }
+.fc-chart { margin: -4px -18px 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips button { flex: 1; min-width: 44px; padding: 8px 6px; border-radius: 11px; font-size: 13px; font-weight: 700; color: var(--muted);
+  background: rgba(255,255,255,.05); border: 1px solid var(--border); transition: background .2s, color .2s; }
+.chips button.active { color: #fff; background: linear-gradient(135deg, rgba(124,92,255,.6), rgba(0,212,255,.4)); border-color: transparent; }
+.field label b { color: var(--text); margin-left: 4px; }
+input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 30px; background: transparent; padding: 0; border: 0; }
+input[type="range"]::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: linear-gradient(90deg, #7C5CFF, #00D4FF, #00E096); }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 24px; height: 24px; margin-top: -9px; border-radius: 50%; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.4); }
+input[type="range"]::-moz-range-track { height: 6px; border-radius: 3px; background: linear-gradient(90deg, #7C5CFF, #00D4FF, #00E096); }
+input[type="range"]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 50%; background: #fff; border: 0; }
+.link-inline { color: var(--cyan); font-weight: 700; text-decoration: underline; font-size: 12px; padding: 0; }
+.fc-years { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+.fc-years button { min-width: 0; padding: 8px 0; font-size: 12px; }

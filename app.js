@@ -56,6 +56,7 @@
 
   const money = (v) => (state.settings.hide ? '$••••••' : currency.format(v));
   const moneyShort = (v) => (state.settings.hide ? '$•••' : compact.format(v));
+  const signedShort = (v) => (state.settings.hide ? '••••' : (v >= 0 ? '+' : '−') + compact.format(Math.abs(v)));
   const signed = (v) => (state.settings.hide ? '••••' : (v >= 0 ? '+' : '−') + currency.format(Math.abs(v)));
   const pct = (v) => (isFinite(v) ? (v >= 0 ? '+' : '−') + Math.abs(v * 100).toFixed(2) + '%' : '—');
   const initials = (name) => (name || '?').trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
@@ -113,6 +114,7 @@
       case '1W': return addDays(t, -7);
       case '1M': return addDays(t, -30);
       case '3M': return addDays(t, -91);
+      case '6M': return addDays(t, -182);
       case 'YTD': return `${t.slice(0, 4)}-01-01`;
       case '1Y': return addDays(t, -365);
       default: return firstDate() || t;
@@ -140,7 +142,7 @@
 
   // ---------------------------------------------------------------- charts
   let chartSeq = 0;
-  function areaChart(svg, pts, { height = 200, colors = ['#FF4D9D', '#7C5CFF', '#00D4FF'], onScrub, axis = true } = {}) {
+  function areaChart(svg, pts, { height = 200, colors = ['#FF4D9D', '#7C5CFF', '#00D4FF'], onScrub, axis = true, labels: axisLabels, extra = [], animate = true } = {}) {
     const W = Math.max(280, Math.round(svg.getBoundingClientRect().width || svg.parentNode.clientWidth || 340));
     const H = height;
     svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
@@ -150,7 +152,8 @@
 
     const padT = 18, padB = axis ? 24 : 8, padX = 4;
     const t0 = pts[0].t, t1 = pts[pts.length - 1].t;
-    let lo = Math.min(...pts.map((p) => p.v)), hi = Math.max(...pts.map((p) => p.v));
+    const allV = pts.map((p) => p.v).concat(...extra.map((e) => e.pts.map((p) => p.v)));
+    let lo = Math.min(...allV), hi = Math.max(...allV);
     if (hi === lo) { hi += Math.abs(hi) * 0.05 || 1; lo -= Math.abs(lo) * 0.05 || 1; }
     const span = hi - lo; lo -= span * 0.1; hi += span * 0.08;
     const x = (t) => padX + ((t - t0) / (t1 - t0 || 1)) * (W - padX * 2);
@@ -166,10 +169,13 @@
       const gy = padT + f * (H - padT - padB);
       return `<line x1="0" x2="${W}" y1="${gy}" y2="${gy}" stroke="rgba(255,255,255,.06)" stroke-dasharray="3 5"/>`;
     }).join('');
+    const [lblL, lblR] = axisLabels || [fmtDate(pts[0].d || isoDate(new Date(t0)), { month: 'short', day: 'numeric' }), 'Today'];
     const labels = axis
-      ? `<text x="${padX + 10}" y="${H - 6}">${fmtDate(pts[0].d || isoDate(new Date(t0)), { month: 'short', day: 'numeric' })}</text>
-         <text x="${W - padX - 10}" y="${H - 6}" text-anchor="end">Today</text>`
+      ? `<text x="${padX + 10}" y="${H - 6}">${esc(lblL)}</text>
+         <text x="${W - padX - 10}" y="${H - 6}" text-anchor="end">${esc(lblR)}</text>`
       : '';
+    const extraLines = extra.map((e) => `<path d="${e.pts.map((p, i) => `${i ? 'L' : 'M'}${x(p.t).toFixed(1)},${y(p.v).toFixed(1)}`).join('')}"
+      fill="none" stroke="${e.color}" stroke-width="1.6" stroke-dasharray="${e.dash || '4 4'}"/>`).join('');
     const len = Math.ceil(xy.reduce((s, p, i) => (i ? s + Math.hypot(p[0] - xy[i - 1][0], p[1] - xy[i - 1][1]) : 0), 0));
 
     svg.innerHTML = `
@@ -182,9 +188,14 @@
         <filter id="${id}g" x="-10%" y="-50%" width="120%" height="200%"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
       </defs>
       ${grid}
-      <path d="${area}" fill="url(#${id}f)" opacity="0"><animate attributeName="opacity" from="0" to="1" dur=".9s" fill="freeze"/></path>
-      <path d="${line}" fill="none" stroke="url(#${id}s)" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" filter="url(#${id}g)"
-        stroke-dasharray="${len}" stroke-dashoffset="${len}"><animate attributeName="stroke-dashoffset" from="${len}" to="0" dur="1s" fill="freeze" calcMode="spline" keySplines=".2 .8 .2 1" keyTimes="0;1"/></path>
+      ${animate
+        ? `<path d="${area}" fill="url(#${id}f)" opacity="0"><animate attributeName="opacity" from="0" to="1" dur=".9s" fill="freeze"/></path>`
+        : `<path d="${area}" fill="url(#${id}f)"/>`}
+      ${extraLines}
+      ${animate
+        ? `<path d="${line}" fill="none" stroke="url(#${id}s)" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" filter="url(#${id}g)"
+        stroke-dasharray="${len}" stroke-dashoffset="${len}"><animate attributeName="stroke-dashoffset" from="${len}" to="0" dur="1s" fill="freeze" calcMode="spline" keySplines=".2 .8 .2 1" keyTimes="0;1"/></path>`
+        : `<path d="${line}" fill="none" stroke="url(#${id}s)" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" filter="url(#${id}g)"/>`}
       <circle cx="${last[0]}" cy="${last[1]}" r="4" fill="${colors[colors.length - 1]}" class="pulse"/>
       <circle cx="${last[0]}" cy="${last[1]}" r="4" fill="#fff" stroke="${colors[colors.length - 1]}" stroke-width="2"/>
       ${labels}
@@ -309,8 +320,9 @@
     shownTotal = to;
   }
 
-  function changeHTML(delta, base, label) {
-    const cls = delta >= 0 ? 'up' : 'down';
+  /** `invert`: for debts, going down is the good direction. */
+  function changeHTML(delta, base, label, invert = false) {
+    const cls = (invert ? delta <= 0 : delta >= 0) ? 'up' : 'down';
     const p = base ? delta / Math.abs(base) : NaN;
     return `<span class="${cls}">${signed(delta)}</span><span class="badge ${cls}">${pct(p)}</span><span class="muted small">${esc(label)}</span>`;
   }
@@ -329,37 +341,58 @@
     if (!has) return;
     ensureOrder();
 
-    // Hero
-    const series = netSeries(range);
-    const total = netAt(today());
-    const first = series[0]?.v ?? total;
-    animateTotal($('#netTotal'), total);
-    $('#heroLabel').textContent = 'Total net worth';
-    $('#netChange').innerHTML = changeHTML(total - first, first, rangeLabel(range));
-    const up = total >= first;
-    areaChart($('#mainChart'), series, {
-      height: 210,
-      colors: up ? ['#7C5CFF', '#00D4FF', '#00E096'] : ['#FFB020', '#FF4D9D', '#FF3B5C'],
-      onScrub: (p, p0) => {
-        if (!p) {
-          $('#netTotal').textContent = money(total);
-          $('#heroLabel').textContent = 'Total net worth';
-          $('#netChange').innerHTML = changeHTML(total - first, first, rangeLabel(range));
-          return;
-        }
-        animToken++;
-        $('#netTotal').textContent = money(p.v);
-        $('#heroLabel').textContent = fmtDate(p.d);
-        $('#netChange').innerHTML = changeHTML(p.v - p0.v, p0.v, `since ${fmtDate(p0.d, { month: 'short', day: 'numeric' })}`);
-      },
-    });
-    $('#ranges').innerHTML = RANGES.map((r) => `<button data-range="${r}" class="${r === range ? 'active' : ''}">${r}</button>`).join('');
-
-    // Stats
+    // Totals
     let assets = 0, liabs = 0;
     for (const a of state.accounts) { const l = latest(a); if (!l) continue; if (isLiab(a)) liabs += Math.abs(l.balance); else assets += l.balance; }
-    let best = null;
+    const total = netAt(today());
     const start = rangeStart(range);
+
+    // Hero: one chart with a toggle — net-worth line, or the assets / liabilities circle
+    const view = state.settings.heroView || 'net';
+    $('#viewToggle').querySelectorAll('[data-view]').forEach((b) => {
+      b.classList.toggle('active', b.dataset.view === view);
+      b.setAttribute('aria-selected', String(b.dataset.view === view));
+    });
+    $('#mainChart').style.display = view === 'net' ? '' : 'none';
+    $('#donutView').hidden = view === 'net';
+    if (view === 'net') {
+      const series = netSeries(range);
+      const first = series[0]?.v ?? total;
+      animateTotal($('#netTotal'), total);
+      $('#heroLabel').textContent = 'Total net worth';
+      $('#netChange').innerHTML = changeHTML(total - first, first, rangeLabel(range));
+      const up = total >= first;
+      areaChart($('#mainChart'), series, {
+        height: 210,
+        colors: up ? ['#7C5CFF', '#00D4FF', '#00E096'] : ['#FFB020', '#FF4D9D', '#FF3B5C'],
+        onScrub: (p, p0) => {
+          if (!p) {
+            $('#netTotal').textContent = money(total);
+            $('#heroLabel').textContent = 'Total net worth';
+            $('#netChange').innerHTML = changeHTML(total - first, first, rangeLabel(range));
+            return;
+          }
+          animToken++;
+          $('#netTotal').textContent = money(p.v);
+          $('#heroLabel').textContent = fmtDate(p.d);
+          $('#netChange').innerHTML = changeHTML(p.v - p0.v, p0.v, `since ${fmtDate(p0.d, { month: 'short', day: 'numeric' })}`);
+        },
+      });
+    } else {
+      const liab = view === 'liabs';
+      const tot = liab ? liabs : assets;
+      const fd = firstDate();
+      const from = sideAt(fd && fd > start ? fd : start, liab);
+      animateTotal($('#netTotal'), tot);
+      $('#heroLabel').textContent = liab ? 'Total liabilities' : 'Total assets';
+      $('#netChange').innerHTML = changeHTML(tot - from, from, rangeLabel(range), liab);
+      breakdown(state.accounts.filter((a) => isLiab(a) === liab), tot, liab ? 'Owed' : 'Assets',
+        liab ? 'No liabilities — nice!' : 'No assets yet', liab ? 'liabs' : 'assets');
+    }
+    $('#ranges').innerHTML = RANGES.map((r) => `<button data-range="${r}" class="${r === range ? 'active' : ''}">${r}</button>`).join('');
+
+    // Stat tiles (tap Assets / Liabilities for the list, Top mover for that account)
+    let best = null;
     for (const a of state.accounts) {
       if (isLiab(a) || !latest(a)) continue;
       const b0 = balanceAt(a, start) ?? a.history[0].balance;
@@ -367,14 +400,13 @@
       if (!best || g > best.g) best = { a, g };
     }
     $('#stats').innerHTML = `
-      <div class="stat glass" style="--accent:#00E096"><div class="k">Assets</div><div class="v">${moneyShort(assets)}</div></div>
-      <div class="stat glass" style="--accent:#FF4D9D"><div class="k">Liabilities</div><div class="v">${moneyShort(liabs)}</div></div>
-      <div class="stat glass" style="--accent:${best ? best.a.color : '#7C5CFF'}"><div class="k">Top mover</div>
-        <div class="v ${best && best.g < 0 ? 'down' : 'up'}" title="${esc(best?.a.name)}">${best ? pct(best.g) : '—'}</div></div>`;
+      <button class="stat glass" data-open="assets" style="--accent:#00E096"><div class="k">Assets <span class="chev">›</span></div><div class="v">${moneyShort(assets)}</div></button>
+      <button class="stat glass" data-open="liabs" style="--accent:#FF4D9D"><div class="k">Liabilities <span class="chev">›</span></div><div class="v">${moneyShort(liabs)}</div></button>
+      <button class="stat glass" data-open="mover" data-acct="${best ? best.a.id : ''}" style="--accent:${best ? best.a.color : '#7C5CFF'}"><div class="k">Top mover <span class="chev">›</span></div>
+        <div class="v ${best && best.g < 0 ? 'down' : 'up'}" title="${esc(best?.a.name)}">${best ? pct(best.g) : '—'}</div></button>`;
 
-    // Breakdown donuts: assets and liabilities by type
-    breakdown(state.accounts.filter((a) => !isLiab(a)), assets, '#donut', '#legend', '#allocNote', 'Assets', 'No assets yet');
-    breakdown(state.accounts.filter(isLiab), liabs, '#donutL', '#legendL', '#liabNote', 'Owed', 'No liabilities — nice!');
+    renderGrowth(total);
+    renderForecast(total);
 
     // Monthly bars
     const months = monthlyChanges();
@@ -391,7 +423,19 @@
       groupHTML('liabilities', 'Liabilities', state.accounts.filter(isLiab), (liabs ? '−' : '') + money(liabs), 'linear-gradient(180deg,#FF4D9D,#FF8A3D)');
   }
 
-  function breakdown(list, total, donutSel, legendSel, noteSel, centerLabel, emptyText) {
+  /** Sum of asset (or debt) balances on a date. */
+  function sideAt(date, liab) {
+    let sum = 0;
+    for (const a of state.accounts) {
+      if (isLiab(a) !== liab) continue;
+      const v = balanceAt(a, date);
+      if (v != null) sum += liab ? Math.abs(v) : v;
+    }
+    return sum;
+  }
+
+  /** The circle chart in the hero: breakdown by account type, with a link to the full list. */
+  function breakdown(list, total, centerLabel, emptyText, kind) {
     const byType = {};
     for (const a of list) {
       const l = latest(a); if (!l || Math.abs(l.balance) <= 0) continue;
@@ -400,13 +444,122 @@
     const segs = Object.entries(byType).sort((x, y) => y[1] - x[1])
       .map(([t, v]) => ({ label: TYPES[t]?.label || t, value: v, color: TYPES[t]?.color || '#888' }));
     if (segs.length) {
-      donut($(donutSel), segs, centerLabel, moneyShort(total));
-      $(legendSel).innerHTML = segs.map((s) => `<li><span class="dot" style="background:${s.color};color:${s.color}"></span><span class="name">${esc(s.label)}</span><span class="pct">${((s.value / total) * 100).toFixed(1)}%</span></li>`).join('');
+      donut($('#donut'), segs, centerLabel, moneyShort(total));
+      $('#legend').innerHTML = segs.map((s) => `<li><span class="dot" style="background:${s.color};color:${s.color}"></span><span class="name">${esc(s.label)}<small>${moneyShort(s.value)}</small></span><span class="pct">${((s.value / total) * 100).toFixed(1)}%</span></li>`).join('')
+        + `<li><button class="see-all" data-open="${kind}">See all ${list.length} account${list.length === 1 ? '' : 's'} ›</button></li>`;
     } else {
-      donut($(donutSel), [{ value: 1, color: 'rgba(255,255,255,.08)' }], centerLabel, '$0');
-      $(legendSel).innerHTML = `<li class="muted">${emptyText}</li>`;
+      donut($('#donut'), [{ value: 1, color: 'rgba(255,255,255,.08)' }], centerLabel, '$0');
+      $('#legend').innerHTML = `<li class="muted">${emptyText}</li>`;
     }
-    $(noteSel).textContent = segs.length ? `${segs.length} categor${segs.length === 1 ? 'y' : 'ies'}` : '';
+  }
+
+  // ---------------------------------------------------------------- growth section
+  const GROWTH_PERIODS = [['1M', '1 month'], ['3M', '3 months'], ['6M', '6 months'], ['YTD', 'This year'], ['1Y', '1 year'], ['ALL', 'All time']];
+
+  /** Average monthly change in net worth over the last year (or as much history as there is). */
+  function avgMonthly() {
+    const fd = firstDate();
+    if (!fd) return null;
+    const yearAgo = addDays(today(), -365);
+    const from = fd > yearAgo ? fd : yearAgo;
+    const days = (ms(today()) - ms(from)) / DAY;
+    if (days < 28) return null;
+    const months = days / 30.4375;
+    return { v: (netAt(today()) - netAt(from)) / months, months: Math.max(1, Math.round(months)) };
+  }
+
+  function renderGrowth(total) {
+    const fd = firstDate();
+    const rows = GROWTH_PERIODS.map(([k, label]) => {
+      const start = k === 'ALL' ? fd : rangeStart(k);
+      if (!fd || start < fd || start >= today()) return { label, none: true };
+      const v0 = netAt(start), d = total - v0;
+      return { label, d, p: v0 ? d / Math.abs(v0) : NaN };
+    });
+    // bars are scaled against the biggest move so the periods are easy to compare
+    const maxP = Math.max(1e-9, ...rows.filter((r) => !r.none && isFinite(r.p)).map((r) => Math.abs(r.p)));
+    $('#growth').innerHTML = rows.map((r) => {
+      if (r.none) return `<div class="g-tile none"><div class="g-k">${r.label}</div><div class="g-v">—</div><div class="g-d">not enough history</div></div>`;
+      const cls = r.d >= 0 ? 'up' : 'down';
+      const w = isFinite(r.p) ? Math.max(4, Math.abs(r.p) / maxP * 100) : 0;
+      return `<div class="g-tile"><div class="g-k">${r.label}</div><div class="g-v ${cls}">${pct(r.p)}</div>
+        <div class="gr-bar"><span class="${cls}" style="width:${w.toFixed(1)}%"></span></div><div class="g-d">${signedShort(r.d)}</div></div>`;
+    }).join('');
+    const avg = avgMonthly();
+    let line = avg ? `Average change: <b class="${avg.v >= 0 ? 'up' : 'down'}">${signedShort(avg.v)}/month</b> over the last ${avg.months} month${avg.months === 1 ? '' : 's'}` : 'Keep updating your balances to see your average monthly change.';
+    if (fd) {
+      const days = (ms(today()) - ms(fd)) / DAY, v0 = netAt(fd);
+      if (days >= 90 && v0 > 0 && total > 0) line += ` · about <b>${pct((total / v0) ** (365 / days) - 1)}</b> a year`;
+    }
+    $('#growthAvg').innerHTML = line;
+  }
+
+  // ---------------------------------------------------------------- growth estimator
+  const FC_YEARS = [1, 5, 10, 15, 20, 25, 30];
+  const FC_RATES = [0, 4, 7, 10, 12];
+  const fcSettings = () => (state.settings.fc ||= { rate: 7, years: 10, monthly: null });
+
+  /** Month-by-month projection: growth compounds monthly on a positive balance, then the monthly addition. */
+  function project(start, monthly, rate, years) {
+    const m = (1 + rate / 100) ** (1 / 12) - 1;
+    const step = years <= 5 ? 1 : 12;
+    const now = new Date();
+    const at = (i) => isoDate(new Date(now.getFullYear(), now.getMonth() + i, Math.min(now.getDate(), 28)));
+    let v = start, base = start;
+    const pts = [{ d: today(), v, base }];
+    for (let i = 1; i <= years * 12; i++) {
+      v = (v > 0 ? v * (1 + m) : v) + monthly;
+      base += monthly;
+      if (i % step === 0) pts.push({ d: at(i), v, base });
+    }
+    return pts.map((p) => ({ ...p, t: ms(p.d) }));
+  }
+
+  function renderForecast(total, { animate = true } = {}) {
+    if (total == null) total = netAt(today());
+    const fc = fcSettings();
+    const avg = avgMonthly();
+    const avgV = Math.round(avg?.v ?? 0);
+    const monthly = fc.monthly ?? avgV;
+    const pts = project(total, monthly, fc.rate, fc.years);
+    const end = pts[pts.length - 1];
+    const added = monthly * 12 * fc.years;
+    const growth = end.v - total - added;
+    const endYear = new Date().getFullYear() + fc.years;
+    const head = () => {
+      $('#fcLabel').textContent = `Estimated net worth in ${fc.years} year${fc.years === 1 ? '' : 's'} (${endYear})`;
+      $('#fcTotal').textContent = money(end.v);
+    };
+    head();
+    $('#fcBreak').innerHTML = `
+      <span><i style="background:#7C5CFF"></i>Today ${moneyShort(total)}</span>
+      <span><i style="background:#00D4FF"></i>You add ${signedShort(added)}</span>
+      <span><i style="background:#00E096"></i>Growth ${signedShort(growth)}</span>`;
+    areaChart($('#fcChart'), pts, {
+      height: 170, animate,
+      colors: ['#7C5CFF', '#00D4FF', '#00E096'],
+      labels: ['Now', String(endYear)],
+      extra: [{ pts: pts.map((p) => ({ t: p.t, v: p.base })), color: 'rgba(255,255,255,.4)' }],
+      onScrub: (p) => {
+        if (!p) return head();
+        $('#fcLabel').textContent = p.d === today() ? 'Today' : `By ${fmtDate(p.d, { month: 'short', year: 'numeric' })}`;
+        $('#fcTotal').textContent = money(p.v);
+      },
+    });
+    // build the chip rows once, then only move the highlight (so a tap is never lost to a redraw)
+    if (!$('#fcYears').children.length) $('#fcYears').innerHTML = FC_YEARS.map((y) => `<button data-years="${y}">${y}Y</button>`).join('');
+    if (!$('#fcRates').children.length) $('#fcRates').innerHTML = FC_RATES.map((r) => `<button data-rate="${r}">${r}%</button>`).join('');
+    $('#fcYears').querySelectorAll('button').forEach((b) => b.classList.toggle('active', +b.dataset.years === fc.years));
+    $('#fcRates').querySelectorAll('button').forEach((b) => b.classList.toggle('active', +b.dataset.rate === fc.rate));
+    $('#fcRateVal').textContent = `${fc.rate}%`;
+    $('#fcRate').value = fc.rate;
+    const inp = $('#fcMonthly');
+    if (document.activeElement !== inp) inp.value = state.settings.hide ? '' : String(monthly);
+    inp.placeholder = state.settings.hide ? '••••' : '0';
+    $('#fcHint').innerHTML = (avg ? `Your average is <b>${signedShort(avg.v)}/month</b>.` : 'Not enough history yet for an average — type an amount.')
+      + (fc.monthly != null && avg ? ' <button class="link-inline" id="fcUseAvg">Use my average</button>' : '');
+    const ua = $('#fcUseAvg');
+    if (ua) ua.onclick = () => { fc.monthly = null; save(); renderForecast(); };
   }
 
   function groupHTML(key, label, list, totalText, accent) {
@@ -619,6 +772,33 @@
         if (!editing) celebrate();
       };
       if (!editing) setTimeout(() => $('#fName', root).focus(), 350);
+    });
+  }
+
+  /** Full-screen list of every asset (or every liability) with its share of the total. */
+  function groupSheet(kind) {
+    const liab = kind === 'liabs';
+    const list = state.accounts.filter((a) => isLiab(a) === liab && latest(a));
+    const total = list.reduce((s, a) => s + Math.abs(latest(a).balance), 0);
+    const rows = [...list].sort((a, b) => Math.abs(latest(b).balance) - Math.abs(latest(a).balance)).map((a) => {
+      const v = Math.abs(latest(a).balance), share = total ? v / total : 0;
+      return `<button class="gs-row" data-acct="${a.id}">
+        <div class="acct-icon" style="background:linear-gradient(135deg, ${a.color}, ${a.color}88)">${esc(initials(a.name))}</div>
+        <div class="gs-main">
+          <div class="gs-top"><span class="gs-name">${esc(a.name)}</span><span class="gs-bal">${liab ? '−' : ''}${money(v)}</span></div>
+          <div class="gs-bar"><span style="width:${(share * 100).toFixed(1)}%;background:${a.color}"></span></div>
+          <div class="gs-sub"><span>${esc([a.institution, TYPES[a.type]?.label].filter(Boolean).join(' · '))}</span><span>${(share * 100).toFixed(1)}%</span></div>
+        </div></button>`;
+    }).join('');
+    openSheet(`
+      <h3>${liab ? 'Liabilities' : 'Assets'}</h3>
+      <div class="gs-total ${liab ? 'down' : 'up'}">${liab && total ? '−' : ''}${money(total)}</div>
+      <p class="hint">${list.length} account${list.length === 1 ? '' : 's'} · tap one to open it</p>
+      <div class="gs-list">${rows || `<p class="muted">No ${liab ? 'liabilities' : 'assets'} yet.</p>`}</div>
+      <button class="ghost-btn" id="gsAdd">Add ${liab ? 'a liability' : 'an asset'}</button>
+    `, (r) => {
+      r.querySelector('.gs-list').onclick = (e) => { const b = e.target.closest('[data-acct]'); if (b) accountDetail(b.dataset.acct); };
+      $('#gsAdd', r).onclick = addChooser;
     });
   }
 
@@ -875,6 +1055,32 @@
   $('#syncRow').onclick = () => syncPlaid({ force: true, quiet: false });
   $('#btnDemo').onclick = loadDemo;
   $('#btnQuick').onclick = quickUpdate;
+  $('#viewToggle').onclick = (e) => {
+    const b = e.target.closest('[data-view]'); if (!b) return;
+    state.settings.heroView = b.dataset.view; save(); render();
+  };
+  const openFromTile = (e) => {
+    const b = e.target.closest('[data-open]'); if (!b) return;
+    if (b.dataset.open === 'mover') { if (b.dataset.acct) accountDetail(b.dataset.acct); }
+    else groupSheet(b.dataset.open);
+  };
+  $('#stats').onclick = openFromTile;
+  $('#donutView').onclick = openFromTile;
+  $('#fcYears').onclick = (e) => {
+    const b = e.target.closest('[data-years]'); if (!b) return;
+    fcSettings().years = +b.dataset.years; save(); renderForecast();
+  };
+  $('#fcRates').onclick = (e) => {
+    const b = e.target.closest('[data-rate]'); if (!b) return;
+    fcSettings().rate = +b.dataset.rate; save(); renderForecast();
+  };
+  $('#fcRate').oninput = (e) => { fcSettings().rate = +e.target.value; renderForecast(undefined, { animate: false }); };
+  $('#fcRate').onchange = () => save();
+  $('#fcMonthly').oninput = (e) => {
+    const v = parseMoney(e.target.value);
+    fcSettings().monthly = e.target.value.trim() === '' || !isFinite(v) ? null : v;
+    save(); renderForecast(undefined, { animate: false });
+  };
   $('#ranges').onclick = (e) => {
     const b = e.target.closest('[data-range]'); if (!b) return;
     range = b.dataset.range; state.settings.range = range; save(); render();
