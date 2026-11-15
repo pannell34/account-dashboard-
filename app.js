@@ -718,7 +718,7 @@
       <div class="glass setting-row" style="border-radius:18px">
         <div class="sr-text">
           <div class="sr-title">${ICONS.coin}Celebrations</div>
-          <p class="hint">When you add or update an account, one of three animations plays — they take turns. Sound plays when your ringer is on.</p>
+          <p class="hint">When you add or update an account, one of four animations plays — they take turns. Sound plays when your ringer is on.</p>
         </div>
         <label class="switch"><input type="checkbox" id="sParty" ${state.settings.celebrate !== false ? 'checked' : ''} aria-label="Celebrations"/><span></span></label>
       </div>
@@ -726,6 +726,7 @@
         <button class="ghost-btn" data-party="coins">💰 Coins</button>
         <button class="ghost-btn" data-party="god">⚡ Thunder god</button>
         <button class="ghost-btn" data-party="rocket">🚀 Rocket</button>
+        <button class="ghost-btn" data-party="sumo">🤼 Sumo</button>
       </div>
       <div class="glass card" style="padding:14px">
         <h2 style="margin-bottom:8px">Install on iPhone</h2>

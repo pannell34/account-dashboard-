@@ -1,9 +1,10 @@
 /* Net Worth — 16-bit celebration that takes over the screen when money moves.
- * Three separate animations; each celebration plays the next one in turn:
+ * Four separate animations; each celebration plays the next one in turn:
  *   coins:  gold coins rain down  ("cha-ching!")
  *   god:    a pocket-sized sky god lands with a thunderclap, says "OH YA!",
  *           puts on shades and rides off in a chariot pulled by rainbow unicorns
  *   rocket: he rides a rocket to the moon
+ *   sumo:   two sumo wrestlers collide in an explosion, faint, and coins pour out of their belly buttons
  * Everything is drawn on a tiny canvas and scaled up with crisp pixels; all sounds are
  * synthesized with Web Audio, so there are no files to download. Tap to skip.
  */
@@ -159,6 +160,9 @@
       coins: [8, 6, 4, 2, 4, 6].map(coinFrame),
       duckGreen: duckSprite('x'),
       duckGold: duckSprite('y'),
+      sumoBlueA: sumoSprite('u', 0), sumoBlueB: sumoSprite('u', 1),
+      sumoRedA: sumoSprite('r', 0), sumoRedB: sumoSprite('r', 1),
+      faintBlue: faintSprite('u'), faintRed: faintSprite('r'),
     };
   }
 
@@ -188,6 +192,47 @@
     ]);
   }
 
+  /** Sumo wrestler, side view facing right. `belt` colours the mawashi; `step` alternates the legs. */
+  function sumoSprite(belt, step) {
+    const legs = step
+      ? ['...sMMMM...MMMMs...', '...sss.......sss...', '....sss.....sss....', '...SSSS.....SSSS...']
+      : ['..ssMMMM...MMMMss..', '..ssss.......ssss..', '..ssss.......ssss..', '.SSSSS.......SSSSS.'];
+    return sprite([
+      '.......kk..........',
+      '......kkkk.........',
+      '....kkkkkks........',
+      '...kkkssssss.......',
+      '...kksssssksS......',
+      '...ksssssssss......',
+      '....sssssssSS......',
+      '..SSsssssssssss....',
+      '.SssssssssssssssS..',
+      'SsssssssssssssssssS',
+      'Ssssssssssssssssssss',
+      'SssssssssssssskssssS',
+      '.SsssssssssssssssS.',
+      '.MMMMMMMMMMMMMMMMM.',
+      '..MMMMMMMMMMMMMMM..',
+      ...legs,
+    ].map((r) => r.replace(/M/g, belt)));
+  }
+
+  /** Fainted sumo lying on his back, head on the left; belly button at (13, 2). */
+  function faintSprite(belt) {
+    return sprite([
+      '...........SSSSS..........',
+      '.........SSsssssSS........',
+      '........SssssksssssS......',
+      '..kk...SsssssssssssS......',
+      '.kkkk.SsssssssssssssS..SS.',
+      'kkssSssssssssssssssssSSss.',
+      'kssssssssssssssssssssssss.',
+      'ksssssMMMMMMMMMMMMMsssss..',
+      '.sssSsMMMMMMMMMMMMMSsss...',
+      '..SS...SSSSSSSSSSS...SS...',
+    ].map((r) => r.replace(/M/g, belt)));
+  }
+
   function coinFrame(w) {
     const c = document.createElement('canvas');
     c.width = 8; c.height = 8;
@@ -209,6 +254,7 @@
   // ------------------------------------------------------------------ pixel font (5x7)
   const FONT = {
     A: ['.###.', '#...#', '#...#', '#####', '#...#', '#...#', '#...#'],
+    B: ['####.', '#...#', '#...#', '####.', '#...#', '#...#', '####.'],
     C: ['.###.', '#...#', '#....', '#....', '#....', '#...#', '.###.'],
     E: ['#####', '#....', '#....', '####.', '#....', '#....', '#####'],
     G: ['.###.', '#...#', '#....', '#.###', '#...#', '#...#', '.###.'],
@@ -248,6 +294,13 @@
   const easeOut = (k) => 1 - (1 - k) ** 3;
   const easeIn = (k) => k ** 3;
   function draw(ctx, spr, x, y, s = 1) { ctx.drawImage(spr, Math.round(x), Math.round(y), spr.width * s, spr.height * s); }
+  function drawFlipped(ctx, spr, x, y, s = 1) {
+    ctx.save();
+    ctx.translate(Math.round(x) + spr.width * s, Math.round(y));
+    ctx.scale(-1, 1);
+    ctx.drawImage(spr, 0, 0, spr.width * s, spr.height * s);
+    ctx.restore();
+  }
   function rect(ctx, x, y, w, h, c) { ctx.fillStyle = c; ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h)); }
   function disc(ctx, cx, cy, r, c) {
     ctx.fillStyle = c;
@@ -524,7 +577,139 @@
       }
     }
 
-    return { coinsScene, godScene, rocketScene };
+    // ---------------- sumo: stomp, charge, KABOOM, faint, coins from belly buttons
+    const floorY = Math.round(H * 0.72);
+    const Z = 3;                                       // sumo pixel scale
+    const SW = 19 * Z, SH = 19 * Z, FW = 26 * Z, FH = 10 * Z;
+    const meetL = W / 2 - SW + 3, meetR = W / 2 - 3;   // x where they touch
+    const restL = 1, restR = W - FW - 1;               // where they land, fainted
+    const crowd = Array.from({ length: 46 }, (_, i) => ({ x: (i * 3.5) % W, y: floorY - 40 - (i % 3) * 7 - rnd(0, 3), c: ['#5a2d3a', '#6b3846', '#4a2533'][i % 3] }));
+    let debris = [], puffs = [], bellyCoins = [], lastSpawn = 0;
+
+    function sumoScene(ctx, t, dt) {
+      const HIT = 1700;
+      // arena: dark red hall, crowd, clay ring with a rope circle
+      bands(ctx, H, floorY, ['#1a0a12', '#240d18', '#2e111f', '#3a1626', '#47192d']);
+      for (const p of crowd) disc(ctx, p.x, p.y, 3, p.c);
+      for (let i = 0; i < 4; i++) { // hanging lanterns
+        const lx = 18 + i * 42;
+        rect(ctx, lx, 0, 1, 10, '#3a2a1a');
+        disc(ctx, lx, 16, 6, (Math.floor(t / 300) + i) % 2 ? '#ff5a3c' : '#ff7a4c');
+        rect(ctx, lx - 3, 14, 7, 1, '#ffd23f');
+      }
+      rect(ctx, 0, floorY, W, H - floorY, '#c9a46b');
+      rect(ctx, 0, floorY, W, 2, '#e3c38a');
+      for (let x = 0; x < W; x += 5) rect(ctx, x, floorY + 6 + ((x * 13) % 11), 2, 1, '#b08c55');
+      for (let a = 0; a < Math.PI * 2; a += 0.02) rect(ctx, W / 2 + Math.cos(a) * 70, floorY + 12 + Math.sin(a) * 7, 2, 1, '#f3ead2');
+
+      ctx.save();
+      if (t > HIT && t < HIT + 450) ctx.translate(Math.round(rnd(-3, 3)), Math.round(rnd(-3, 3)));
+
+      if (t < HIT) {
+        // stomp in place, then charge
+        let xl = 6, xr = W - SW - 6, yl = floorY - SH, yr = floorY - SH;
+        const step = Math.floor(t / 110) % 2;
+        if (t < 1100) {
+          yl -= Math.max(0, Math.sin(Math.min(1, ((t - 200) % 400) / 400) * Math.PI)) * (t > 200 ? 5 : 0);
+          yr -= Math.max(0, Math.sin(Math.min(1, ((t - 400) % 400) / 400) * Math.PI)) * (t > 400 ? 5 : 0);
+          draw(ctx, S.sumoBlueA, xl, yl, Z);
+          drawFlipped(ctx, S.sumoRedA, xr, yr, Z);
+        } else {
+          const k = easeIn(clamp01((t - 1100) / (HIT - 1100)));
+          xl += (meetL - xl) * k; xr += (meetR - xr) * k;
+          draw(ctx, step ? S.sumoBlueA : S.sumoBlueB, xl, yl - step, Z);
+          drawFlipped(ctx, step ? S.sumoRedB : S.sumoRedA, xr, yr - (1 - step), Z);
+          if (Math.random() < 0.35) puffs.push({ x: xl + 8, y: floorY - 2, r: 2, v: -10 }, { x: xr + SW - 8, y: floorY - 2, r: 2, v: -10 });
+        }
+      } else {
+        // blown apart, then fainted on their backs
+        const k = clamp01((t - HIT) / 520);
+        const flying = k < 1;
+        if (flying) {
+          const arc = Math.sin(Math.PI * k) * 26;
+          const xl = meetL + (restL - meetL) * easeOut(k), xr = meetR + (restR + FW - SW - meetR) * easeOut(k);
+          ctx.save(); ctx.translate(xl + SW / 2, floorY - SH / 2 - arc); ctx.rotate(-k * 5);
+          draw(ctx, S.sumoBlueA, -SW / 2, -SH / 2, Z); ctx.restore();
+          ctx.save(); ctx.translate(xr + SW / 2, floorY - SH / 2 - arc); ctx.rotate(k * 5);
+          drawFlipped(ctx, S.sumoRedA, -SW / 2, -SH / 2, Z); ctx.restore();
+        } else {
+          const bounce = Math.round(Math.abs(Math.sin((t - HIT - 520) / 90)) * 4 * Math.max(0, 1 - (t - HIT - 520) / 500));
+          const fy = floorY - FH - bounce;
+          draw(ctx, S.faintBlue, restL, fy, Z);
+          drawFlipped(ctx, S.faintRed, restR, fy, Z);
+          // X eyes
+          for (const hx of [restL + 2 * Z, restR + FW - 4 * Z]) {
+            for (const [dx, dy] of [[0, 0], [2, 2], [2, 0], [0, 2], [1, 1]]) rect(ctx, hx + dx, fy + 5 * Z + dy, 1, 1, '#1a1020');
+          }
+          // dizzy stars
+          for (const [hx, ph] of [[restL + 3 * Z, 0], [restR + FW - 3 * Z, 1.7]]) {
+            for (let i = 0; i < 3; i++) {
+              const a = t / 220 + ph + i * 2.09;
+              spark(ctx, hx + Math.cos(a) * 11, fy + 3 + Math.sin(a) * 4, 1, i === 1 ? '#ffffff' : '#ffd23f');
+            }
+          }
+          // coins fountain out of their belly buttons
+          const navels = [[restL + 13 * Z + 1, fy + 2 * Z + 1], [restR + FW - 13 * Z - 2, fy + 2 * Z + 1]];
+          if (t > 2500 && t < 5300 && t - lastSpawn > 22 && bellyCoins.length < 420) {
+            lastSpawn = t;
+            for (const [nx, ny] of navels) bellyCoins.push({ x: nx - 4, y: ny - 6, vx: rnd(-45, 45), vy: rnd(-260, -170), f: Math.floor(rnd(0, 6)), rest: false });
+          }
+          for (const [nx, ny] of navels) if (t > 2500 && t < 5300) spark(ctx, nx, ny - 2, Math.random() < 0.5 ? 1 : 2, '#fff3a0');
+        }
+      }
+
+      // explosion: flash, fireball rings, debris and smoke
+      if (t >= HIT && !debris.started) {
+        debris.started = true;
+        for (let i = 0; i < 46; i++) {
+          const a = rnd(0, Math.PI * 2), sp = rnd(60, 190);
+          debris.push({ x: W / 2, y: floorY - 20, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 60, c: ['#ffd23f', '#ff9f1c', '#ff4d2e', '#fff3a0', '#6b7480'][i % 5], life: rnd(0.6, 1.3) });
+        }
+      }
+      if (t >= HIT) {
+        const k = (t - HIT) / 650;
+        if (k < 1) {
+          const cx = W / 2, cy = floorY - 20, R = 6 + 46 * easeOut(k);
+          disc(ctx, cx, cy, Math.round(R), `rgba(255,77,46,${1 - k})`);
+          disc(ctx, cx, cy, Math.round(R * 0.72), `rgba(255,159,28,${1 - k * 0.8})`);
+          disc(ctx, cx, cy, Math.round(R * 0.45), `rgba(255,243,160,${1 - k * 0.6})`);
+          if (k < 0.45 && Math.random() < 0.5) puffs.push({ x: cx + rnd(-R, R) * 0.5, y: cy + rnd(-R, R) * 0.3, r: rnd(3, 5), v: rnd(-40, -20) });
+        }
+        debris = Object.assign(debris.filter((d) => {
+          d.life -= dt; d.vy += 260 * dt; d.x += d.vx * dt; d.y += d.vy * dt;
+          rect(ctx, d.x, d.y, 2, 2, d.c);
+          return d.life > 0;
+        }), { started: true });
+      }
+      puffs = puffs.filter((p) => {
+        p.r += 12 * dt; p.y += p.v * dt;
+        disc(ctx, p.x, p.y, Math.round(p.r), `rgba(190,180,170,${0.3 * (1 - p.r / 13)})`);
+        return p.r < 13;
+      });
+
+      // belly coins
+      for (const c of bellyCoins) {
+        if (!c.rest) {
+          c.vy += 380 * dt; c.x += c.vx * dt; c.y += c.vy * dt;
+          if (c.x < 0 || c.x > W - 8) c.vx *= -1;
+          const fl = floorY + 2 + ((c.x * 7) % 10);
+          if (c.y > fl) { c.y = fl; if (c.vy > 80) { c.vy *= -0.3; c.vx *= 0.6; } else c.rest = true; }
+        }
+        draw(ctx, S.coins[c.rest ? 0 : (c.f + Math.floor(t / 70)) % 6], c.x, c.y);
+      }
+      ctx.restore();
+
+      // white flash + BOOM!
+      if (t >= HIT && t < HIT + 160) rect(ctx, 0, 0, W, H, `rgba(255,255,255,${1 - (t - HIT) / 160})`);
+      if (t > HIT + 40 && t < HIT + 1400) {
+        const str = 'BOOM!', sc = 3, k = clamp01((t - HIT - 40) / 180);
+        const jitter = t < HIT + 600 ? Math.round(rnd(-1, 1)) : 0;
+        text(ctx, str, (W - textWidth(str, sc)) / 2 + jitter, H * 0.22 - 20 * (1 - easeOut(k)) + jitter, sc,
+          (i) => ['#ffd23f', '#ff9f1c', '#ff4d2e'][(i + Math.floor(t / 70)) % 3]);
+      }
+    }
+
+    return { coinsScene, godScene, rocketScene, sumoScene };
   }
 
   // ------------------------------------------------------------------ sound (Web Audio)
@@ -619,6 +804,37 @@
       tune.forEach((n, i) => tone(c, out, g + 3.9 + i * 0.14, NOTE(n), 0.13, { vol: 0.08 }));
       [48, 55, 48, 55, 52, 55].forEach((n, i) => tone(c, out, g + 3.9 + i * 0.28, NOTE(n), 0.26, { type: 'triangle', vol: 0.18 }));
     },
+    sumo(c, out, s) {
+      const thud = (t, v = 0.55) => {
+        tone(c, out, t, 95, 0.28, { type: 'sine', f1: 38, vol: v });
+        noise(c, out, t, 0.12, { type: 'lowpass', f0: 500, vol: v * 0.5 });
+      };
+      // ceremonial stomps
+      [0.3, 0.5, 0.7, 0.9].forEach((t) => thud(s + t, 0.5));
+      // taiko roll speeding up as they charge
+      let t = 1.1, gap = 0.12;
+      while (t < 1.68) { thud(s + t, 0.35); t += gap; gap = Math.max(0.035, gap * 0.8); }
+      // KABOOM
+      noise(c, out, s + 1.7, 0.2, { type: 'highpass', f0: 1800, vol: 0.7 });
+      noise(c, out, s + 1.7, 1.8, { type: 'lowpass', f0: 2200, f1: 70, vol: 0.95, attack: 0.01 });
+      tone(c, out, s + 1.7, 70, 1.1, { type: 'sine', f1: 24, vol: 0.75 });
+      for (let i = 0; i < 6; i++) noise(c, out, s + 1.85 + Math.random() * 0.5, 0.05, { type: 'highpass', f0: 3000, vol: 0.25 });
+      // wah-wah as they faint, then tweeting birds
+      tone(c, out, s + 2.25, 330, 0.3, { type: 'sawtooth', f1: 240, vol: 0.09 });
+      tone(c, out, s + 2.6, 262, 0.55, { type: 'sawtooth', f1: 150, vol: 0.09 });
+      for (let i = 0; i < 6; i++) {
+        const b = s + 2.4 + i * 0.45;
+        tone(c, out, b, 2600, 0.06, { type: 'sine', f1: 3400, vol: 0.06 });
+        tone(c, out, b + 0.08, 2900, 0.06, { type: 'sine', f1: 3600, vol: 0.06 });
+      }
+      // coins gushing out: clinks + a rising major-scale ding
+      for (let i = 0; i < 46; i++) {
+        const b = s + 2.5 + Math.random() * 2.8, f = rnd(2600, 4400);
+        tone(c, out, b, f, 0.07, { type: 'triangle', vol: 0.08 });
+      }
+      const MAJOR = [0, 2, 4, 5, 7, 9, 11];
+      for (let i = 0; i < 11; i++) tone(c, out, s + 2.55 + i * 0.25, NOTE(72 + 12 * Math.floor(i / 7) + MAJOR[i % 7]), 0.22, { type: 'triangle', vol: 0.12 });
+    },
     rocket(c, out, r) {
       noise(c, out, r, 3.4, { type: 'lowpass', f0: 300, f1: 3500, vol: 0.55, attack: 0.3 });
       tone(c, out, r, 110, 3.2, { type: 'sawtooth', f1: 880, vol: 0.05, attack: 0.3 });
@@ -649,9 +865,9 @@
   }
 
   // ------------------------------------------------------------------ player
-  const ORDER = ['coins', 'god', 'rocket'];
-  const LENGTH = { coins: 5400, god: 6000, rocket: 3600 }; // ms
-  const SCENE = { coins: 'coinsScene', god: 'godScene', rocket: 'rocketScene' };
+  const ORDER = ['coins', 'god', 'rocket', 'sumo'];
+  const LENGTH = { coins: 5400, god: 6000, rocket: 3600, sumo: 5900 }; // ms
+  const SCENE = { coins: 'coinsScene', god: 'godScene', rocket: 'rocketScene', sumo: 'sumoScene' };
   const NEXT_KEY = 'networth.nextCelebration';
 
   /** Which animation plays next: they take turns, remembered between launches. */
@@ -663,7 +879,7 @@
   }
 
   let running = false;
-  /** play() takes the next animation in turn; play('coins' | 'god' | 'rocket') plays that one. */
+  /** play() takes the next animation in turn; play('coins' | 'god' | 'rocket' | 'sumo') plays that one. */
   function play(name) {
     if (running) return;
     if (!ORDER.includes(name)) name = nextName();
