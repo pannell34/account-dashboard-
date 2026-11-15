@@ -18,6 +18,7 @@
     y: '#ffd23f', Y: '#fff3a0', o: '#c98a10', s: '#f4c49c', S: '#d99a6c',
     b: '#ffd84a', B: '#c9922a', r: '#e0303f', R: '#8e1a2b', u: '#3566d6', U: '#1f3d8a',
     n: '#7a4a25', m: '#111111', p: '#ff9fc4',
+    v: '#1f6b3a', V: '#34a35a', O: '#ff9a1f', q: '#c86a10', x: '#19c24f',
     1: '#ff3b3b', 2: '#ff9f1c', 3: '#ffe23b', 4: '#38d96b', 5: '#3b8bff', 6: '#a64dff',
   };
   const RAINBOW = ['#ff3b3b', '#ff9f1c', '#ffe23b', '#38d96b', '#3b8bff', '#a64dff'];
@@ -156,7 +157,35 @@
         'r...gGGg...r',
       ]),
       coins: [8, 6, 4, 2, 4, 6].map(coinFrame),
+      duckGreen: duckSprite('x'),
+      duckGold: duckSprite('y'),
     };
+  }
+
+  /** Our rich duck, facing you: green top hat with a gold band, bow tie, and $ signs for eyes. */
+  function duckSprite(eye) {
+    const dollar = ['.x.', 'xxx', 'x..', 'xxx', '..x', 'xxx', '.x.'].map((r) => r.replace(/\./g, 'w').replace(/x/g, eye));
+    return sprite([
+      '......kkkkkkkkkk......',
+      '......kvVvvvvvvk......',
+      '......kvVvvvvvvk......',
+      '......kvVvvvvvvk......',
+      '......kyyyyyyyyk......',
+      '...kkkkkkkkkkkkkkkk...',
+      '....kwwwwwwwwwwwwk....',
+      '...kwwwwwwwwwwwwwwk...',
+      '..kwkkkkkkkkkkkkkkwk..',
+      ...dollar.map((d) => `..kwkw${d}wkkw${d}wkwk..`),
+      '..kwkkkkkkkkkkkkkkwk..',
+      '..kwwwOOOOOOOOOOwwwk..',
+      '...kwOOOOOOOOOOOOwk...',
+      '...kwwkqqqqqqqqkwwk...',
+      '....kwwkkkkkkkkwwk....',
+      '...kwwwwrrkrrwwwwk....',
+      '..kWwwwwwwwwwwwwwwWk..',
+      '.kWwwwwwwwwwwwwwwwwWk.',
+      '.kWwwwwwwwwwwwwwwwwWk.',
+    ]);
   }
 
   function coinFrame(w) {
@@ -245,11 +274,43 @@
 
   // ------------------------------------------------------------------ scenes
   function makeScenes(H) {
-    const coins = Array.from({ length: 260 }, () => ({
-      x: rnd(-4, W - 4), y: rnd(-40, -10), vx: rnd(-12, 12), vy: rnd(30, 90),
-      delay: rnd(0, 1600), spin: rnd(0.6, 1.6), phase: Math.floor(rnd(0, 6)), rest: false,
+    // Coin rain: lots of coins that land on a pile (a height per 4px column), so the
+    // screen fills up with a sea of gold. Landed coins are painted once onto `pile`.
+    const COLS = W / 4;
+    const heights = new Array(COLS + 1).fill(0);
+    const maxPile = Math.round(H * 0.55);
+    const pile = document.createElement('canvas');
+    pile.width = W; pile.height = H;
+    const pctx = pile.getContext('2d');
+    const coins = Array.from({ length: 950 }, (_, i) => ({
+      x: rnd(-4, W - 4), y: rnd(-60, -10), vx: rnd(-10, 10), vy: rnd(40, 110),
+      delay: (i / 950) ** 0.8 * 2600 + rnd(0, 120), spin: rnd(0.6, 1.6), phase: Math.floor(rnd(0, 6)), done: false,
     }));
-    const floor = H - 9;
+    const surfaceAt = (x) => {
+      const c = Math.max(0, Math.min(COLS - 1, Math.floor(x / 4)));
+      return H - Math.max(heights[c], heights[c + 1]);
+    };
+    function land(c) {
+      // settle into the lowest spot nearby, like coins sliding down a heap
+      let col = Math.max(0, Math.min(COLS - 2, Math.floor((c.x + 4) / 4)));
+      let best = col;
+      for (let d = -3; d <= 3; d++) {
+        const k = col + d;
+        if (k < 0 || k > COLS - 2) continue;
+        if (Math.max(heights[k], heights[k + 1]) < Math.max(heights[best], heights[best + 1])) best = k;
+      }
+      const top = Math.max(heights[best], heights[best + 1]);
+      pctx.drawImage(S.coins[Math.random() < 0.7 ? 0 : 5], best * 4, H - top - 7);
+      // fill any gaps underneath (behind the coins already there) so the pile looks solid
+      pctx.globalCompositeOperation = 'destination-over';
+      pctx.fillStyle = '#b97c0e';
+      pctx.fillRect(best * 4, H - top - 2, 8, top + 2);
+      pctx.globalCompositeOperation = 'source-over';
+      if (top < maxPile) heights[best] = heights[best + 1] = top + 3;
+      c.done = true;
+    }
+    let splash = [];
+
     const stars = Array.from({ length: 70 }, () => ({ x: rnd(0, W), y: rnd(0, H), tw: rnd(0, 6.28), big: Math.random() < 0.15 }));
     const sparkles = Array.from({ length: 18 }, () => ({ x: rnd(4, W - 4), y: rnd(4, H * 0.8), p: rnd(0, 6.28) }));
     const clouds = Array.from({ length: 5 }, (_, i) => ({ x: rnd(-20, W), y: 6 + i * 9 + rnd(0, 6), w: rnd(26, 46), v: rnd(3, 8) }));
@@ -261,29 +322,54 @@
     const gy = gY - 42;                        // standing y
 
     function coinsScene(ctx, t, dt) {
-      rect(ctx, 0, 0, W, H, `rgba(24,12,48,${Math.min(0.9, t / 250 * 0.9)})`);
-      for (const s of sparkles) {
-        const a = (Math.sin(t / 120 + s.p) + 1) / 2;
-        if (a > 0.6) spark(ctx, s.x, s.y, a > 0.85 ? 2 : 1, '#fff3a0');
+      rect(ctx, 0, 0, W, H, `rgba(24,12,48,${Math.min(0.97, t / 250 * 0.97)})`);
+      for (const sp of sparkles) {
+        const a = (Math.sin(t / 120 + sp.p) + 1) / 2;
+        if (a > 0.6) spark(ctx, sp.x, sp.y, a > 0.85 ? 2 : 1, '#fff3a0');
       }
+      // falling coins behind the pile
       for (const c of coins) {
-        if (t < c.delay) continue;
-        if (!c.rest) {
-          c.vy += 320 * dt; c.y += c.vy * dt; c.x += c.vx * dt;
-          if (c.y > floor - rnd(0, 6)) {
-            c.y = floor - rnd(0, 6);
-            if (c.vy > 60) { c.vy = -c.vy * 0.32; c.vx *= 0.5; } else c.rest = true;
-          }
-        }
-        const f = c.rest ? 0 : (Math.floor(t / 70 * c.spin) + c.phase) % 6;
-        draw(ctx, S.coins[f], c.x, c.y);
+        if (c.done || t < c.delay) continue;
+        c.vy += 340 * dt; c.y += c.vy * dt; c.x = Math.max(-2, Math.min(W - 6, c.x + c.vx * dt));
+        if (c.y + 8 >= surfaceAt(c.x + 4)) land(c);
+        else draw(ctx, S.coins[(Math.floor(t / 70 * c.spin) + c.phase) % 6], c.x, c.y);
       }
+
+      // the duck pops out of the middle and swims around in the coins
+      const D0 = 2300;
+      if (t > D0) {
+        const st = t - D0;
+        const swim = clamp01((st - 450) / 400);
+        const dx = W / 2 + Math.sin(st / 650) * (W / 2 - 26) * swim;
+        const surf = surfaceAt(dx);
+        const rise = easeOut(clamp01(st / 450));
+        const dy = surf - 44 * rise + 12 * (1 - rise) + Math.sin(st / 140) * 2; // head, beak and bow tie above the coins
+        const tilt = Math.cos(st / 650) * swim;
+        draw(ctx, Math.floor(t / 150) % 2 ? S.duckGreen : S.duckGold, dx - 22 + tilt * 2, dy, 2);
+        // coin splashes: a big one when he surfaces, then a little wake as he swims
+        if (st < 60 && !splash.big) {
+          splash.big = true;
+          for (let i = 0; i < 26; i++) splash.push({ x: dx + rnd(-10, 10), y: surf, vx: rnd(-70, 70), vy: rnd(-200, -90), f: Math.floor(rnd(0, 6)) });
+        }
+        if (swim > 0 && Math.random() < 0.35) {
+          const back = -Math.sign(Math.cos(st / 650)) || 1;
+          splash.push({ x: dx + back * 18, y: surf, vx: back * rnd(20, 60), vy: rnd(-110, -50), f: Math.floor(rnd(0, 6)) });
+        }
+      }
+      // the pile itself (drawn over the duck so he sits *in* the coins)
+      ctx.drawImage(pile, 0, 0);
+      splash = Object.assign(splash.filter((p) => {
+        p.vy += 380 * dt; p.x += p.vx * dt; p.y += p.vy * dt;
+        draw(ctx, S.coins[(p.f + Math.floor(t / 60)) % 6], p.x, p.y);
+        return p.y < surfaceAt(p.x + 4) + 2;
+      }), { big: splash.big });
+
       if (t > 120) {
         const k = clamp01((t - 120) / 220);
-        const s = 2;
+        const sc = 2;
         const str = 'CHA-CHING!';
-        const y = H * 0.28 - 30 * (1 - easeOut(k)) + Math.sin(t / 140) * 2;
-        text(ctx, str, (W - textWidth(str, s)) / 2, y, s, (i) => ((Math.floor(t / 90) + i) % 2 ? '#ffd23f' : '#fff3a0'));
+        const y = H * 0.11 - 30 * (1 - easeOut(k)) + Math.sin(t / 140) * 2;
+        text(ctx, str, (W - textWidth(str, sc)) / 2, y, sc, (i) => ((Math.floor(t / 90) + i) % 2 ? '#ffd23f' : '#fff3a0'));
       }
     }
 
@@ -490,17 +576,34 @@
   // One sound function per animation; `b` is the start time on the audio clock.
   const SOUNDS = {
     coins(c, out, b) {
-      noise(c, out, b, 0.07, { type: 'highpass', f0: 4500, vol: 0.5 });
-      noise(c, out, b + 0.03, 0.05, { type: 'bandpass', f0: 2500, q: 2, vol: 0.4 });
-      tone(c, out, b + 0.1, 1318.5, 1.0, { type: 'triangle', vol: 0.35 });
-      tone(c, out, b + 0.1, 1975.5, 0.8, { type: 'sine', vol: 0.22 });
-      tone(c, out, b + 0.32, 1760, 1.1, { type: 'triangle', vol: 0.3 });
-      tone(c, out, b + 0.32, 2637, 0.9, { type: 'sine', vol: 0.18 });
-      for (let i = 0; i < 18; i++) {
-        const t = b + 0.5 + Math.random() * 2.3, f = rnd(2600, 4200);
-        tone(c, out, t, f, 0.09, { type: 'triangle', vol: 0.09 });
-        tone(c, out, t + 0.01, f * 1.5, 0.06, { type: 'sine', vol: 0.05 });
+      // slot-machine reels: quick ticks stepping up the major scale, octave after octave
+      const MAJOR = [0, 2, 4, 5, 7, 9, 11];
+      const steps = 24, dur = 3.3;
+      for (let i = 0; i < steps; i++) {
+        const t = b + dur * (i / steps) ** 0.92;
+        const n = 60 + 12 * Math.floor(i / 7) + MAJOR[i % 7];
+        noise(c, out, t, 0.025, { type: 'bandpass', f0: 3000, q: 4, vol: 0.18 });
+        tone(c, out, t, NOTE(n), 0.11, { vol: 0.11 });
+        tone(c, out, t + 0.055, NOTE(n), 0.06, { type: 'triangle', vol: 0.08 });
+        if (i % 7 === 0) tone(c, out, t, NOTE(n + 12), 0.25, { type: 'sine', vol: 0.12 });
       }
+      // JACKPOT bells
+      const j = b + dur + 0.05;
+      [96, 100, 103, 108].forEach((n, i) => {
+        tone(c, out, j + i * 0.12, NOTE(n), 0.7, { type: 'triangle', vol: 0.22 });
+        tone(c, out, j + i * 0.12, NOTE(n) * 2.01, 0.4, { type: 'sine', vol: 0.08 });
+      });
+      // payout: a shower of coins
+      for (let i = 0; i < 28; i++) {
+        const t = j + 0.1 + Math.random() * 1.6, f = rnd(2600, 4400);
+        tone(c, out, t, f, 0.08, { type: 'triangle', vol: 0.08 });
+        tone(c, out, t + 0.01, f * 1.5, 0.05, { type: 'sine', vol: 0.04 });
+      }
+      // quack when the duck pops up
+      [2.3, 2.62].forEach((q) => {
+        tone(c, out, b + q, 520, 0.16, { type: 'sawtooth', f1: 300, vol: 0.12 });
+        noise(c, out, b + q, 0.14, { type: 'bandpass', f0: 1100, q: 6, vol: 0.1 });
+      });
     },
     god(c, out, g) {
       noise(c, out, g + 0.3, 0.18, { type: 'highpass', f0: 2500, vol: 0.7 });
@@ -547,7 +650,7 @@
 
   // ------------------------------------------------------------------ player
   const ORDER = ['coins', 'god', 'rocket'];
-  const LENGTH = { coins: 3200, god: 6000, rocket: 3600 }; // ms
+  const LENGTH = { coins: 5400, god: 6000, rocket: 3600 }; // ms
   const SCENE = { coins: 'coinsScene', god: 'godScene', rocket: 'rocketScene' };
   const NEXT_KEY = 'networth.nextCelebration';
 
