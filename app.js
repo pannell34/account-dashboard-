@@ -512,8 +512,65 @@
     $('.sheet-panel').scrollTop = 0;
     onMount && onMount(sheetBody);
   }
-  function closeSheet() { sheet.classList.remove('open'); sheet.setAttribute('aria-hidden', 'true'); document.activeElement?.blur(); }
-  sheet.addEventListener('click', (e) => { if (e.target.hasAttribute('data-close')) closeSheet(); });
+  const panel = $('.sheet-panel'), backdrop = $('.sheet-backdrop');
+  function resetDrag() {
+    sheet.classList.remove('dragging');
+    panel.style.transform = ''; backdrop.style.opacity = '';
+  }
+  function closeSheet() {
+    resetDrag();
+    sheet.classList.remove('open'); sheet.setAttribute('aria-hidden', 'true'); document.activeElement?.blur();
+  }
+  let suppressClick = false;
+  sheet.addEventListener('click', (e) => {
+    if (suppressClick) { suppressClick = false; return; }
+    if (e.target.closest('[data-close]')) closeSheet();
+  });
+
+  // Swipe down to dismiss, like an iOS sheet: drag the bar at the top, or anywhere on the
+  // panel once it is scrolled to the top. Far enough or fast enough closes; otherwise it springs back.
+  (() => {
+    let start = null; // { y, t, fromBar, scroll }
+    let dy = 0, dragging = false, trail = []; // recent [time, dy] samples for flick speed
+    const skip = (el) => el.closest('input, select, textarea, .switch, .grip');
+    sheet.addEventListener('touchstart', (e) => {
+      if (e.touches.length !== 1 || skip(e.target)) { start = null; return; }
+      start = { y: e.touches[0].clientY, t: performance.now(), fromBar: !!e.target.closest('.grab-zone'), scroll: panel.scrollTop };
+      dy = 0; dragging = false; trail = [];
+    }, { passive: true });
+    sheet.addEventListener('touchmove', (e) => {
+      if (!start) return;
+      dy = e.touches[0].clientY - start.y;
+      if (!dragging) {
+        if (Math.abs(dy) < 6) return;
+        // Only start when pulling down, and (from the bar, or the content was already at the top).
+        if (dy > 0 && (start.fromBar || (start.scroll <= 0 && panel.scrollTop <= 0))) {
+          dragging = true; sheet.classList.add('dragging'); start.y += 6; dy -= 6;
+        } else { start = null; return; }
+      }
+      e.preventDefault(); // stop the page from scrolling while dragging
+      const now = performance.now();
+      trail.push([now, dy]);
+      while (trail.length > 2 && now - trail[0][0] > 100) trail.shift();
+      const d = Math.max(0, dy) + Math.min(0, dy) * 0.2; // a little rubber-band when pushed up
+      panel.style.transform = `translateY(${d}px)`;
+      backdrop.style.opacity = String(Math.max(0, 1 - d / panel.offsetHeight));
+    }, { passive: false });
+    const end = () => {
+      if (!start) return;
+      if (dragging) {
+        suppressClick = true; setTimeout(() => (suppressClick = false), 400);
+        const [t0, d0] = trail[0] || [start.t, 0];
+        const v = (dy - d0) / Math.max(1, performance.now() - t0); // speed over the last ~0.1s, px per ms
+        sheet.classList.remove('dragging');
+        if (dy > Math.min(160, panel.offsetHeight * 0.25) || (v > 0.4 && dy > 24)) closeSheet();
+        else { panel.style.transform = ''; backdrop.style.opacity = ''; }
+      }
+      start = null; dragging = false;
+    };
+    sheet.addEventListener('touchend', end);
+    sheet.addEventListener('touchcancel', end);
+  })();
 
   function toast(msg) {
     const t = $('#toast'); t.textContent = msg; t.classList.add('show');
