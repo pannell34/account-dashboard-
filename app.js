@@ -35,6 +35,7 @@
     home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg>',
     sync: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16M3 12a9 9 0 0 1 15.5-6.2L21 8M21 3v5h-5M3 21v-5h5"/></svg>',
     link: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>',
+    coin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M14.5 9.5c-.5-1-1.5-1.5-2.5-1.5-1.7 0-2.5 1-2.5 2s.8 1.6 2.5 2 2.5 1 2.5 2-1 2-2.5 2c-1.2 0-2.2-.6-2.6-1.6M12 6.5v11"/></svg>',
     gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
   };
 
@@ -572,6 +573,12 @@
     sheet.addEventListener('touchcancel', end);
   })();
 
+  /** Plays the full-screen 16-bit celebration unless it has been switched off in Settings. */
+  function celebrate() {
+    if (state.settings.celebrate === false) return;
+    setTimeout(() => window.Celebrate?.play(), 250);
+  }
+
   function toast(msg) {
     const t = $('#toast'); t.textContent = msg; t.classList.add('show');
     clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 2200);
@@ -609,6 +616,7 @@
           state.accounts.push(acct);
         }
         save(); closeSheet(); render(); toast(editing ? 'Saved' : 'Account added');
+        if (!editing) celebrate();
       };
       if (!editing) setTimeout(() => $('#fName', root).focus(), 350);
     });
@@ -646,6 +654,7 @@
         const d = $('#dDate', root).value || today();
         setBalance(a, d, isLiab(a) ? Math.abs(v) : v);
         save(); render(); accountDetail(a.id); toast('Balance updated');
+        celebrate();
       };
       root.querySelector('.history').onclick = (e) => {
         const b = e.target.closest('[data-del]'); if (!b) return;
@@ -690,6 +699,7 @@
         });
         save(); closeSheet(); render();
         toast(n ? `Updated ${n} account${n > 1 ? 's' : ''}` : 'No changes');
+        if (n) celebrate();
       };
     });
   }
@@ -704,6 +714,18 @@
           <p class="hint" id="fidHint">Ask for Face ID every time you open the app.</p>
         </div>
         <label class="switch"><input type="checkbox" id="sFace" ${on ? 'checked' : ''} aria-label="Require Face ID"/><span></span></label>
+      </div>
+      <div class="glass setting-row" style="border-radius:18px">
+        <div class="sr-text">
+          <div class="sr-title">${ICONS.coin}Celebrations</div>
+          <p class="hint">When you add or update an account, one of three animations plays — they take turns. Sound plays when your ringer is on.</p>
+        </div>
+        <label class="switch"><input type="checkbox" id="sParty" ${state.settings.celebrate !== false ? 'checked' : ''} aria-label="Celebrations"/><span></span></label>
+      </div>
+      <div class="preview-row">
+        <button class="ghost-btn" data-party="coins">💰 Coins</button>
+        <button class="ghost-btn" data-party="god">⚡ Thunder god</button>
+        <button class="ghost-btn" data-party="rocket">🚀 Rocket</button>
       </div>
       <div class="glass card" style="padding:14px">
         <h2 style="margin-bottom:8px">Install on iPhone</h2>
@@ -730,6 +752,8 @@
       <input type="file" id="sFile" accept=".json,application/json" hidden/>
       <input type="file" id="sCsvFile" accept=".csv,text/csv,text/plain" hidden/>
     `, (root) => {
+      $('#sParty', root).onchange = (e) => { state.settings.celebrate = e.target.checked; save(); };
+      root.querySelectorAll('[data-party]').forEach((b) => (b.onclick = () => { closeSheet(); window.Celebrate?.play(b.dataset.party); }));
       const sw = $('#sFace', root);
       faceIdAvailable().then((ok) => {
         if (ok || state.settings.faceId) return;
@@ -984,6 +1008,7 @@
       state.plaid.lastSync = Date.now();
       save(); render();
       toast(n ? `Added ${n} account${n === 1 ? '' : 's'} from ${rec.institution}` : `${rec.institution} is connected`);
+      celebrate();
     } catch (e) { toast(e.message || 'Plaid connection failed'); }
   }
 
