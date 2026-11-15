@@ -12,6 +12,7 @@ A dark, colorful app for keeping track of all your accounts (Robinhood, banks, 4
 - **Automatic balances with Plaid** (optional): connect banks, cards, loans and brokerages so balances refresh on their own. Manual accounts still work side by side.
 - **Update balances** fills in every account on one screen. It's quick to do weekly while you look at Robinhood.
 - **Face ID lock** (optional): offered the first time you open the app, and switchable in Settings → Require Face ID. It locks on launch and again after the app has been in the background for a minute. It works by saving a passkey on the iPhone, and iOS uses Face ID (or your passcode) to unlock it.
+- **Celebrations**: a 16-bit, full-screen show plays when you add an account or update a balance. Gold coins rain down (cha-ching!), a pocket-sized thunder god lands, shouts "OH YA!", puts on shades and rides off in a chariot pulled by rainbow unicorns, then rockets to the moon. Tap to skip; switch it off or preview it in Settings. Sound plays when the ringer is on.
 - **Privacy toggle** (eye icon) hides every dollar amount.
 - **Backup / restore** as JSON and **CSV import** (`date,account,balance[,type]`).
 - No servers and no logins. Data stays in the phone's local storage.
