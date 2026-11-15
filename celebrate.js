@@ -1,8 +1,9 @@
 /* Net Worth — 16-bit celebration that takes over the screen when money moves.
- *   Scene 1: gold coins rain down  ("cha-ching!")
- *   Scene 2: a pocket-sized sky god lands with a thunderclap, says "OH YA!",
- *            puts on shades and rides off in a chariot pulled by rainbow unicorns
- *   Scene 3: he rides a rocket to the moon
+ * Three separate animations; each celebration plays the next one in turn:
+ *   coins:  gold coins rain down  ("cha-ching!")
+ *   god:    a pocket-sized sky god lands with a thunderclap, says "OH YA!",
+ *           puts on shades and rides off in a chariot pulled by rainbow unicorns
+ *   rocket: he rides a rocket to the moon
  * Everything is drawn on a tiny canvas and scaled up with crisp pixels; all sounds are
  * synthesized with Web Audio, so there are no files to download. Tap to skip.
  */
@@ -10,7 +11,6 @@
   'use strict';
 
   const W = 160;                                   // art width in "pixels"; height follows the screen
-  const T1 = 2800, T2 = 8800, T3 = 12400;          // scene boundaries (ms)
 
   // ------------------------------------------------------------------ palette + sprites
   const PAL = {
@@ -487,51 +487,52 @@
   }
   const NOTE = (n) => 440 * 2 ** ((n - 69) / 12); // MIDI note → Hz
 
-  function soundtrack() {
+  // One sound function per animation; `b` is the start time on the audio clock.
+  const SOUNDS = {
+    coins(c, out, b) {
+      noise(c, out, b, 0.07, { type: 'highpass', f0: 4500, vol: 0.5 });
+      noise(c, out, b + 0.03, 0.05, { type: 'bandpass', f0: 2500, q: 2, vol: 0.4 });
+      tone(c, out, b + 0.1, 1318.5, 1.0, { type: 'triangle', vol: 0.35 });
+      tone(c, out, b + 0.1, 1975.5, 0.8, { type: 'sine', vol: 0.22 });
+      tone(c, out, b + 0.32, 1760, 1.1, { type: 'triangle', vol: 0.3 });
+      tone(c, out, b + 0.32, 2637, 0.9, { type: 'sine', vol: 0.18 });
+      for (let i = 0; i < 18; i++) {
+        const t = b + 0.5 + Math.random() * 2.3, f = rnd(2600, 4200);
+        tone(c, out, t, f, 0.09, { type: 'triangle', vol: 0.09 });
+        tone(c, out, t + 0.01, f * 1.5, 0.06, { type: 'sine', vol: 0.05 });
+      }
+    },
+    god(c, out, g) {
+      noise(c, out, g + 0.3, 0.18, { type: 'highpass', f0: 2500, vol: 0.7 });
+      noise(c, out, g + 0.32, 2.4, { type: 'lowpass', f0: 1400, f1: 90, vol: 0.85, attack: 0.02 });
+      tone(c, out, g + 0.32, 70, 0.9, { type: 'sine', f1: 30, vol: 0.6 });
+      tone(c, out, g + 0.65, 140, 0.3, { type: 'sine', f1: 40, vol: 0.6 });
+      tone(c, out, g + 0.9, 330, 0.13, { f1: 520, vol: 0.13 });
+      tone(c, out, g + 1.06, 440, 0.18, { f1: 900, vol: 0.13 });
+      tone(c, out, g + 2.65, 2093, 0.3, { type: 'sine', vol: 0.2 });
+      tone(c, out, g + 2.73, 3136, 0.45, { type: 'sine', vol: 0.16 });
+      for (let t = 3.0; t < 5.8; t += 0.11) noise(c, out, g + t, 0.035, { type: 'bandpass', f0: (t * 100) % 2 < 1 ? 1600 : 2200, q: 3, vol: 0.22 });
+      const tune = [72, 76, 79, 84, 79, 84, 88, 91, 88, 84, 91, 96];
+      tune.forEach((n, i) => tone(c, out, g + 3.9 + i * 0.14, NOTE(n), 0.13, { vol: 0.08 }));
+      [48, 55, 48, 55, 52, 55].forEach((n, i) => tone(c, out, g + 3.9 + i * 0.28, NOTE(n), 0.26, { type: 'triangle', vol: 0.18 }));
+    },
+    rocket(c, out, r) {
+      noise(c, out, r, 3.4, { type: 'lowpass', f0: 300, f1: 3500, vol: 0.55, attack: 0.3 });
+      tone(c, out, r, 110, 3.2, { type: 'sawtooth', f1: 880, vol: 0.05, attack: 0.3 });
+      [67, 72, 76, 79].forEach((n, i) => tone(c, out, r + 0.3 + i * 0.11, NOTE(n), 0.1, { vol: 0.1 }));
+      tone(c, out, r + 0.75, NOTE(84), 0.6, { vol: 0.1 });
+      tone(c, out, r + 0.75, NOTE(88), 0.6, { type: 'triangle', vol: 0.12 });
+    },
+  };
+
+  function soundtrack(name) {
     const c = audio();
     if (!c) return null;
     if (c.state !== 'running') c.resume().catch(() => {});
     const out = c.createGain();
     out.gain.value = 0.7;
     out.connect(c.destination);
-    const b = c.currentTime + 0.05;
-
-    // Scene 1 — cha-ching + coin clinks
-    noise(c, out, b, 0.07, { type: 'highpass', f0: 4500, vol: 0.5 });
-    noise(c, out, b + 0.03, 0.05, { type: 'bandpass', f0: 2500, q: 2, vol: 0.4 });
-    tone(c, out, b + 0.1, 1318.5, 1.0, { type: 'triangle', vol: 0.35 });
-    tone(c, out, b + 0.1, 1975.5, 0.8, { type: 'sine', vol: 0.22 });
-    tone(c, out, b + 0.32, 1760, 1.1, { type: 'triangle', vol: 0.3 });
-    tone(c, out, b + 0.32, 2637, 0.9, { type: 'sine', vol: 0.18 });
-    for (let i = 0; i < 16; i++) {
-      const t = b + 0.5 + Math.random() * 2.1, f = rnd(2600, 4200);
-      tone(c, out, t, f, 0.09, { type: 'triangle', vol: 0.09 });
-      tone(c, out, t + 0.01, f * 1.5, 0.06, { type: 'sine', vol: 0.05 });
-    }
-
-    // Scene 2 — thunder, landing thud, "oh ya", bling, gallop + chiptune
-    const g = b + T1 / 1000;
-    noise(c, out, g + 0.3, 0.18, { type: 'highpass', f0: 2500, vol: 0.7 });
-    noise(c, out, g + 0.32, 2.4, { type: 'lowpass', f0: 1400, f1: 90, vol: 0.85, attack: 0.02 });
-    tone(c, out, g + 0.32, 70, 0.9, { type: 'sine', f1: 30, vol: 0.6 });
-    tone(c, out, g + 0.65, 140, 0.3, { type: 'sine', f1: 40, vol: 0.6 });
-    tone(c, out, g + 0.9, 330, 0.13, { f1: 520, vol: 0.13 });
-    tone(c, out, g + 1.06, 440, 0.18, { f1: 900, vol: 0.13 });
-    tone(c, out, g + 2.65, 2093, 0.3, { type: 'sine', vol: 0.2 });
-    tone(c, out, g + 2.73, 3136, 0.45, { type: 'sine', vol: 0.16 });
-    for (let t = 3.0; t < 5.8; t += 0.11) noise(c, out, g + t, 0.035, { type: 'bandpass', f0: (t * 100) % 2 < 1 ? 1600 : 2200, q: 3, vol: 0.22 });
-    const tune = [72, 76, 79, 84, 79, 84, 88, 91, 88, 84, 91, 96];
-    tune.forEach((n, i) => tone(c, out, g + 3.9 + i * 0.14, NOTE(n), 0.13, { vol: 0.08 }));
-    [48, 55, 48, 55, 52, 55].forEach((n, i) => tone(c, out, g + 3.9 + i * 0.28, NOTE(n), 0.26, { type: 'triangle', vol: 0.18 }));
-
-    // Scene 3 — rocket roar + fanfare
-    const r = b + T2 / 1000;
-    noise(c, out, r, 3.4, { type: 'lowpass', f0: 300, f1: 3500, vol: 0.55, attack: 0.3 });
-    tone(c, out, r, 110, 3.2, { type: 'sawtooth', f1: 880, vol: 0.05, attack: 0.3 });
-    [67, 72, 76, 79].forEach((n, i) => tone(c, out, r + 0.3 + i * 0.11, NOTE(n), 0.1, { vol: 0.1 }));
-    tone(c, out, r + 0.75, NOTE(84), 0.6, { vol: 0.1 });
-    tone(c, out, r + 0.75, NOTE(88), 0.6, { type: 'triangle', vol: 0.12 });
-
+    SOUNDS[name](c, out, c.currentTime + 0.05);
     return {
       stop() {
         try {
@@ -545,22 +546,39 @@
   }
 
   // ------------------------------------------------------------------ player
+  const ORDER = ['coins', 'god', 'rocket'];
+  const LENGTH = { coins: 3200, god: 6000, rocket: 3600 }; // ms
+  const SCENE = { coins: 'coinsScene', god: 'godScene', rocket: 'rocketScene' };
+  const NEXT_KEY = 'networth.nextCelebration';
+
+  /** Which animation plays next: they take turns, remembered between launches. */
+  function nextName() {
+    let i = 0;
+    try { i = (parseInt(localStorage.getItem(NEXT_KEY), 10) || 0) % ORDER.length; } catch { /* private mode */ }
+    try { localStorage.setItem(NEXT_KEY, String((i + 1) % ORDER.length)); } catch { /* ignore */ }
+    return ORDER[i];
+  }
+
   let running = false;
-  function play() {
+  /** play() takes the next animation in turn; play('coins' | 'god' | 'rocket') plays that one. */
+  function play(name) {
     if (running) return;
+    if (!ORDER.includes(name)) name = nextName();
     running = true;
     build();
     const H = Math.max(200, Math.round(W * innerHeight / innerWidth));
     const cv = document.createElement('canvas');
     cv.className = 'celebrate';
     cv.width = W; cv.height = H;
+    cv.style.opacity = '0';
     cv.setAttribute('aria-label', 'Celebration animation. Tap to skip.');
     document.body.appendChild(cv);
     const ctx = cv.getContext('2d');
     ctx.imageSmoothingEnabled = false;
 
-    const sound = soundtrack();
-    const scenes = makeScenes(H);
+    const sound = soundtrack(name);
+    const draw = makeScenes(H)[SCENE[name]];
+    const len = LENGTH[name];
     const t0 = performance.now();
     let last = t0, done = false;
 
@@ -577,23 +595,16 @@
       if (done) return;
       const t = now - t0, dt = Math.min(0.05, (now - last) / 1000);
       last = now;
+      if (t >= len) return finish();
       ctx.clearRect(0, 0, W, H);
-      if (t < T1) scenes.coinsScene(ctx, t, dt);
-      else if (t < T2) scenes.godScene(ctx, t - T1, dt);
-      else if (t < T3) scenes.rocketScene(ctx, t - T2, dt);
-      else return finish();
-      // quick white flash between scenes
-      for (const edge of [T1, T2]) {
-        const a = 1 - (t - edge) / 180;
-        if (t >= edge && a > 0) rect(ctx, 0, 0, W, H, `rgba(255,255,255,${a})`);
-      }
-      // fade at the very end
-      if (t > T3 - 400) { ctx.globalAlpha = 1; cv.style.opacity = String(clamp01((T3 - t) / 400)); }
+      draw(ctx, t, dt);
+      cv.style.opacity = String(Math.min(clamp01(t / 150), clamp01((len - t) / 400)));
       text(ctx, 'TAP TO SKIP', (W - textWidth('TAP TO SKIP', 1)) / 2, H - 12, 1, 'rgba(255,255,255,.75)');
       requestAnimationFrame(frame);
     };
     requestAnimationFrame(frame);
+    return name;
   }
 
-  window.Celebrate = { play, unlockAudio, get running() { return running; } };
+  window.Celebrate = { play, unlockAudio, names: ORDER, get running() { return running; } };
 })();

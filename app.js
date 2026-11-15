@@ -718,11 +718,15 @@
       <div class="glass setting-row" style="border-radius:18px">
         <div class="sr-text">
           <div class="sr-title">${ICONS.coin}Celebrations</div>
-          <p class="hint">Coins, a thunder god and a rocket when you add or update an account. Sound plays when your ringer is on.</p>
+          <p class="hint">When you add or update an account, one of three animations plays — they take turns. Sound plays when your ringer is on.</p>
         </div>
         <label class="switch"><input type="checkbox" id="sParty" ${state.settings.celebrate !== false ? 'checked' : ''} aria-label="Celebrations"/><span></span></label>
       </div>
-      <button class="ghost-btn" id="sPreview">Preview celebration</button>
+      <div class="preview-row">
+        <button class="ghost-btn" data-party="coins">💰 Coins</button>
+        <button class="ghost-btn" data-party="god">⚡ Thunder god</button>
+        <button class="ghost-btn" data-party="rocket">🚀 Rocket</button>
+      </div>
       <div class="glass card" style="padding:14px">
         <h2 style="margin-bottom:8px">Install on iPhone</h2>
         <ol class="install-steps">
@@ -749,7 +753,7 @@
       <input type="file" id="sCsvFile" accept=".csv,text/csv,text/plain" hidden/>
     `, (root) => {
       $('#sParty', root).onchange = (e) => { state.settings.celebrate = e.target.checked; save(); };
-      $('#sPreview', root).onclick = () => { closeSheet(); window.Celebrate?.play(); };
+      root.querySelectorAll('[data-party]').forEach((b) => (b.onclick = () => { closeSheet(); window.Celebrate?.play(b.dataset.party); }));
       const sw = $('#sFace', root);
       faceIdAvailable().then((ok) => {
         if (ok || state.settings.faceId) return;

@@ -403,3 +403,5 @@ html.shield main { filter: blur(24px); }
   transition: opacity .4s;
 }
 .celebrate.out { opacity: 0 !important; }
+.preview-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.preview-row .ghost-btn { padding: 12px 6px; font-size: 13px; }
