@@ -36,6 +36,13 @@
     sync: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16M3 12a9 9 0 0 1 15.5-6.2L21 8M21 3v5h-5M3 21v-5h5"/></svg>',
     link: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>',
     coin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M14.5 9.5c-.5-1-1.5-1.5-2.5-1.5-1.7 0-2.5 1-2.5 2s.8 1.6 2.5 2 2.5 1 2.5 2-1 2-2.5 2c-1.2 0-2.2-.6-2.6-1.6M12 6.5v11"/></svg>',
+    download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M4 19h16"/></svg>',
+    upload: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M7 8l5-5 5 5M4 19h16"/></svg>',
+    table: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M9 4v16"/></svg>',
+    spark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 17l.8 2.2L22 20l-2.2.8L19 23l-.8-2.2L16 20l2.2-.8z"/></svg>',
+    phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg>',
+    trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>',
+    play: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',
     gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
   };
 
@@ -886,60 +893,83 @@
 
   function settingsSheet() {
     const on = !!state.settings.faceId;
+    const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+    const banks = state.plaid.items.length;
+    const bankSub = !plaidReady() ? 'Not set up — update balances automatically'
+      : banks ? `${banks} connected · updated ${ago(state.plaid.lastSync)}` : 'Ready — connect your first account';
+    const bad = state.plaid.items.some((i) => i.error);
+    // one row of an iOS-style grouped list
+    const row = ({ id = '', icon, color, title, sub = '', right = '', tag = 'div', cls = '' }) => `
+      <${tag} class="set-row ${cls}" ${id ? `id="${id}"` : ''}>
+        <span class="set-ic" style="--ic:${color}">${ICONS[icon]}</span>
+        <span class="set-text"><span class="set-title">${title}</span>${sub ? `<span class="set-sub" ${id ? `id="${id}Sub"` : ''}>${sub}</span>` : ''}</span>
+        ${right}
+      </${tag}>`;
+    const toggle = (id, checked, label) => `<label class="switch"><input type="checkbox" id="${id}" ${checked ? 'checked' : ''} aria-label="${label}"/><span></span></label>`;
+    const chevron = `<span class="set-chev">${ICONS.chev}</span>`;
+
     openSheet(`
       <h3>Settings</h3>
-      <div class="glass setting-row" style="border-radius:18px">
-        <div class="sr-text">
-          <div class="sr-title">${ICONS.face}Require Face ID</div>
-          <p class="hint" id="fidHint">Ask for Face ID every time you open the app.</p>
+
+      <div class="set-head">Security &amp; privacy</div>
+      <div class="set-group">
+        ${row({ id: 'fid', icon: 'face', color: '#34c759', title: 'Face ID lock', sub: 'Ask for Face ID when the app opens', right: toggle('sFace', on, 'Face ID lock') })}
+        ${row({ icon: 'eyeOff', color: '#5e5ce6', title: 'Hide balances', sub: 'Show •••• instead of amounts', right: toggle('sHide', state.settings.hide, 'Hide balances') })}
+      </div>
+
+      <div class="set-head">Accounts</div>
+      <div class="set-group">
+        ${row({ id: 'sPlaid', tag: 'button', icon: 'bank', color: '#00b8d9', title: 'Bank connections', sub: bad ? '<span class="down">A bank needs reconnecting</span>' : bankSub, right: chevron })}
+      </div>
+
+      <div class="set-head">Celebrations</div>
+      <div class="set-group">
+        ${row({ icon: 'coin', color: '#ffb020', title: 'Play celebrations', sub: 'When you add or update an account', right: toggle('sParty', state.settings.celebrate !== false, 'Celebrations') })}
+        <div class="set-row set-previews">
+          <span class="set-ic" style="--ic:#ff4d9d">${ICONS.play}</span>
+          <span class="set-text"><span class="set-title">Preview</span>
+            <span class="party-chips">
+              <button data-party="coins"><b>💰</b>Coins</button>
+              <button data-party="god"><b>⚡</b>Thunder</button>
+              <button data-party="rocket"><b>🚀</b>Rocket</button>
+              <button data-party="sumo"><b>🤼</b>Sumo</button>
+            </span>
+          </span>
         </div>
-        <label class="switch"><input type="checkbox" id="sFace" ${on ? 'checked' : ''} aria-label="Require Face ID"/><span></span></label>
       </div>
-      <div class="glass setting-row" style="border-radius:18px">
-        <div class="sr-text">
-          <div class="sr-title">${ICONS.coin}Celebrations</div>
-          <p class="hint">When you add or update an account, one of four animations plays — they take turns. Sound plays when your ringer is on.</p>
-        </div>
-        <label class="switch"><input type="checkbox" id="sParty" ${state.settings.celebrate !== false ? 'checked' : ''} aria-label="Celebrations"/><span></span></label>
+      <p class="set-foot">The four animations take turns. Sound plays when your ringer is on.</p>
+
+      <div class="set-head">Data &amp; backup</div>
+      <div class="set-group">
+        ${row({ id: 'sExport', tag: 'button', icon: 'download', color: '#0a84ff', title: 'Back up data', sub: 'Save a copy to Files or iCloud Drive', right: chevron })}
+        ${row({ id: 'sImport', tag: 'button', icon: 'upload', color: '#0a84ff', title: 'Restore from backup', sub: 'Replace everything with a saved copy', right: chevron })}
+        ${row({ id: 'sCsv', tag: 'button', icon: 'table', color: '#30b0c7', title: 'Import from a spreadsheet', sub: 'CSV file with dates and balances', right: chevron })}
+        ${row({ id: 'sDemo', tag: 'button', icon: 'spark', color: '#af52de', title: 'Load demo data', sub: 'Try the app with sample accounts', right: chevron })}
       </div>
-      <div class="preview-row">
-        <button class="ghost-btn" data-party="coins">💰 Coins</button>
-        <button class="ghost-btn" data-party="god">⚡ Thunder god</button>
-        <button class="ghost-btn" data-party="rocket">🚀 Rocket</button>
-        <button class="ghost-btn" data-party="sumo">🤼 Sumo</button>
+      <p class="set-foot">Spreadsheet columns: <code>date, account, balance</code>, plus an optional type (brokerage, retirement, crypto, checking, savings, credit, loan…). Dates look like 2026-11-17.</p>
+
+      ${standalone ? '' : `
+      <div class="set-head">App</div>
+      <div class="set-group">
+        ${row({ icon: 'phone', color: '#8e8e93', title: 'Add to Home Screen', sub: 'In Safari: Share → Add to Home Screen' })}
+      </div>`}
+
+      <div class="set-group set-gap">
+        <button class="set-row danger" id="sClear"><span class="set-ic" style="--ic:#ff3b5c">${ICONS.trash}</span><span class="set-text"><span class="set-title">Erase all data</span></span></button>
       </div>
-      <div class="glass card" style="padding:14px">
-        <h2 style="margin-bottom:8px">Install on iPhone</h2>
-        <ol class="install-steps">
-          <li>Open this page in <b>Safari</b></li>
-          <li>Tap the <b>Share</b> button</li>
-          <li>Choose <b>Add to Home Screen</b></li>
-        </ol>
-      </div>
-      <button class="glass setting-row plaid-row" id="sPlaid" style="border-radius:18px;width:100%;text-align:left">
-        <div class="sr-text">
-          <div class="sr-title">${ICONS.bank}Bank connections</div>
-          <p class="hint">${plaidReady() ? `${state.plaid.items.length} connected with Plaid` : 'Set up Plaid to update balances automatically'}</p>
-        </div>${ICONS.chev}
-      </button>
-      <div class="settings-list">
-        <button class="ghost-btn" id="sExport">Back up data (JSON)</button>
-        <button class="ghost-btn" id="sImport">Restore from backup</button>
-        <button class="ghost-btn" id="sCsv">Import balances from CSV</button>
-        <p class="hint">CSV columns: <code>date,account,balance</code> (optional 4th column: type such as brokerage, retirement, crypto, checking, savings, credit, loan). Dates as YYYY-MM-DD.</p>
-        <button class="ghost-btn" id="sDemo">Load demo data</button>
-        <button class="danger-btn" id="sClear">Erase all data</button>
-      </div>
+      <p class="set-foot center">Net Worth keeps your data on this device only.</p>
+
       <input type="file" id="sFile" accept=".json,application/json" hidden/>
       <input type="file" id="sCsvFile" accept=".csv,text/csv,text/plain" hidden/>
     `, (root) => {
+      $('#sHide', root).onchange = (e) => { state.settings.hide = e.target.checked; save(); render(); };
       $('#sParty', root).onchange = (e) => { state.settings.celebrate = e.target.checked; save(); };
       root.querySelectorAll('[data-party]').forEach((b) => (b.onclick = () => { closeSheet(); window.Celebrate?.play(b.dataset.party); }));
       const sw = $('#sFace', root);
       faceIdAvailable().then((ok) => {
         if (ok || state.settings.faceId) return;
         sw.disabled = true;
-        $('#fidHint', root).textContent = "Face ID isn't available here. Open the app from your iPhone home screen (iOS 16 or later).";
+        $('#fidSub', root).textContent = 'Available when opened from your Home Screen (iOS 16+)';
       });
       sw.onchange = async () => {
         sw.disabled = true;
@@ -951,7 +981,7 @@
           if (e.name !== 'NotAllowedError' && e.name !== 'AbortError') toast("Couldn't set up Face ID");
         } finally { sw.disabled = false; }
       };
-      $('#sPlaid', root).onclick = plaidSettings;
+      $('#sPlaid', root).onclick = () => plaidSettings(true);
       $('#sExport', root).onclick = exportData;
       $('#sImport', root).onclick = () => $('#sFile', root).click();
       $('#sCsv', root).onclick = () => $('#sCsvFile', root).click();
@@ -1288,7 +1318,7 @@
         <span><b>Add manually</b><span>Type in a balance and update it whenever you like.</span></span></button>
     `, (r) => {
       $('#cManual', r).onclick = () => accountForm();
-      $('#cPlaid', r).onclick = () => (plaidReady() ? kindChooser() : plaidSettings());
+      $('#cPlaid', r).onclick = () => (plaidReady() ? kindChooser() : plaidSettings(false));
     });
   }
 
@@ -1301,9 +1331,12 @@
     `, (r) => r.querySelectorAll('[data-kind]').forEach((b) => (b.onclick = () => connectPlaid(b.dataset.kind))));
   }
 
-  function plaidSettings() {
+  /** `back`: show a "‹ Settings" button (when opened from Settings); remembered across redraws. */
+  function plaidSettings(back = plaidSettings.back) {
+    plaidSettings.back = back;
     const items = state.plaid.items;
     openSheet(`
+      ${back ? '<button class="back-btn" id="pBack">‹ Settings</button>' : ''}
       <h3>Bank connections</h3>
       <p class="hint">Plaid links your accounts so balances update automatically. It needs your own small Plaid server — the README in your GitHub repo walks you through setting it up.</p>
       <div class="field"><label for="pUrl">Server address</label><input id="pUrl" type="url" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="https://networth-plaid.yourname.workers.dev" value="${esc(state.settings.plaidUrl || '')}"/></div>
@@ -1319,6 +1352,7 @@
         <button class="ghost-btn" id="pSync">${ICONS.sync} Refresh balances now</button>` : ''}
       ${plaidReady() ? '<button class="primary-btn" id="pAdd">Connect an account</button>' : ''}
     `, (r) => {
+      if ($('#pBack', r)) $('#pBack', r).onclick = settingsSheet;
       $('#pSave', r).onclick = async () => {
         const cfg = { plaidUrl: $('#pUrl', r).value.trim(), plaidCode: $('#pCode', r).value.trim() };
         const st = $('#pStatus', r);
