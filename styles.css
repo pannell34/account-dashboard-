@@ -476,3 +476,49 @@ input[type="range"]::-moz-range-thumb { width: 24px; height: 24px; border-radius
 .link-inline { color: var(--cyan); font-weight: 700; text-decoration: underline; font-size: 12px; padding: 0; }
 .fc-years { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
 .fc-years button { min-width: 0; padding: 8px 0; font-size: 12px; }
+
+/* ---------- settings (iOS-style grouped list) ---------- */
+.set-head { font-size: 12px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: var(--muted); margin: 6px 14px -8px; }
+.set-group { border-radius: 16px; background: rgba(255,255,255,.05); border: 1px solid var(--border); overflow: hidden; }
+.set-gap { margin-top: 8px; }
+.set-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 58px; padding: 10px 14px; text-align: left; position: relative; }
+button.set-row { transition: background .15s; }
+button.set-row:active { background: rgba(255,255,255,.07); }
+.set-row + .set-row::before { content: ""; position: absolute; top: 0; left: 56px; right: 0; height: 1px; background: rgba(255,255,255,.07); }
+.set-ic { width: 30px; height: 30px; border-radius: 8px; flex: none; display: grid; place-items: center; color: #fff; background: var(--ic); box-shadow: 0 2px 8px rgba(0,0,0,.25); }
+.set-ic svg { width: 18px; height: 18px; }
+.set-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.set-title { font-size: 15px; font-weight: 600; }
+.set-sub { font-size: 12px; color: var(--muted); margin-top: 2px; line-height: 1.35; }
+.set-chev { color: var(--muted); flex: none; display: grid; }
+.set-chev svg { width: 18px; height: 18px; transform: rotate(-90deg); }
+.set-row.danger { justify-content: flex-start; }
+.set-row.danger .set-title { color: var(--down); }
+.set-previews { align-items: flex-start; }
+.party-chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 8px; }
+.party-chips button { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 7px 2px; border-radius: 11px; font-size: 11px; font-weight: 600; color: var(--muted);
+  background: rgba(255,255,255,.06); border: 1px solid var(--border); }
+.party-chips button b { font-size: 20px; line-height: 1.1; }
+.party-chips button:active { transform: scale(.95); }
+.set-foot { font-size: 12px; color: var(--muted); margin: -6px 14px 4px; line-height: 1.45; }
+.set-foot.center { text-align: center; margin-top: 2px; }
+.set-foot code { font-size: 11px; }
+.back-btn { align-self: flex-start; color: var(--cyan); font-weight: 700; font-size: 15px; padding: 0 0 2px; margin-bottom: -8px; }
+
+/* settings drop-down sections */
+.set-sec { border-radius: 16px; background: rgba(255,255,255,.05); border: 1px solid var(--border); overflow: hidden; transition: background .2s, border-color .2s; }
+.set-sec.open { background: rgba(255,255,255,.065); border-color: rgba(255,255,255,.14); }
+.set-sec-head { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 62px; padding: 11px 14px; text-align: left; }
+.set-sec-head:active { background: rgba(255,255,255,.06); }
+.set-sec-head .set-title { font-size: 16px; font-weight: 700; }
+.set-sec-chev { color: var(--muted); flex: none; display: grid; transition: transform .3s cubic-bezier(.2,.9,.25,1); }
+.set-sec-chev svg { width: 20px; height: 20px; }
+.set-sec.open .set-sec-chev { transform: rotate(180deg); }
+.set-sec-body { display: grid; grid-template-rows: 0fr; visibility: hidden; transition: grid-template-rows .32s cubic-bezier(.2,.9,.25,1), visibility 0s linear .32s; }
+.set-sec.open .set-sec-body { grid-template-rows: 1fr; visibility: visible; transition: grid-template-rows .32s cubic-bezier(.2,.9,.25,1), visibility 0s; }
+.set-sec-inner { overflow: hidden; min-height: 0; }
+.set-sec-inner > .set-row:first-child::before { content: ""; position: absolute; top: 0; left: 14px; right: 14px; height: 1px; background: rgba(255,255,255,.08); }
+.set-sec-inner .set-row { padding-left: 22px; }
+.set-sec-inner .set-row + .set-row::before { left: 64px; }
+.set-note { font-size: 12px; color: var(--muted); line-height: 1.45; margin: 0; padding: 2px 16px 14px 22px; }
+.set-note code { font-size: 11px; }
