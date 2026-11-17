@@ -43,6 +43,7 @@
     phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg>',
     trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>',
     play: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',
+    shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg>',
     gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
   };
 
@@ -907,23 +908,31 @@
       </${tag}>`;
     const toggle = (id, checked, label) => `<label class="switch"><input type="checkbox" id="${id}" ${checked ? 'checked' : ''} aria-label="${label}"/><span></span></label>`;
     const chevron = `<span class="set-chev">${ICONS.chev}</span>`;
+    const opened = (state.settings.setOpen ||= {});
+    const secSummary = () => `Face ID ${state.settings.faceId ? 'on' : 'off'} · Balances ${state.settings.hide ? 'hidden' : 'shown'}`;
+    const partySummary = () => (state.settings.celebrate !== false ? 'On · 4 animations take turns' : 'Off');
+    // a drop-down section: a header row with a summary, and a body that slides open
+    const section = (key, icon, color, title, summary, inner) => `
+      <div class="set-sec ${opened[key] ? 'open' : ''}" data-sec="${key}">
+        <button class="set-sec-head" aria-expanded="${!!opened[key]}">
+          <span class="set-ic" style="--ic:${color}">${ICONS[icon]}</span>
+          <span class="set-text"><span class="set-title">${title}</span><span class="set-sub" id="sum-${key}">${summary}</span></span>
+          <span class="set-sec-chev">${ICONS.chev}</span>
+        </button>
+        <div class="set-sec-body"><div class="set-sec-inner">${inner}</div></div>
+      </div>`;
 
     openSheet(`
       <h3>Settings</h3>
 
-      <div class="set-head">Security &amp; privacy</div>
-      <div class="set-group">
+      ${section('security', 'shield', '#34c759', 'Security &amp; privacy', secSummary(), `
         ${row({ id: 'fid', icon: 'face', color: '#34c759', title: 'Face ID lock', sub: 'Ask for Face ID when the app opens', right: toggle('sFace', on, 'Face ID lock') })}
-        ${row({ icon: 'eyeOff', color: '#5e5ce6', title: 'Hide balances', sub: 'Show •••• instead of amounts', right: toggle('sHide', state.settings.hide, 'Hide balances') })}
-      </div>
+        ${row({ icon: 'eyeOff', color: '#5e5ce6', title: 'Hide balances', sub: 'Show •••• instead of amounts', right: toggle('sHide', state.settings.hide, 'Hide balances') })}`)}
 
-      <div class="set-head">Accounts</div>
-      <div class="set-group">
-        ${row({ id: 'sPlaid', tag: 'button', icon: 'bank', color: '#00b8d9', title: 'Bank connections', sub: bad ? '<span class="down">A bank needs reconnecting</span>' : bankSub, right: chevron })}
-      </div>
+      ${section('accounts', 'bank', '#00b8d9', 'Accounts', bad ? '<span class="down">A bank needs reconnecting</span>' : bankSub, `
+        ${row({ id: 'sPlaid', tag: 'button', icon: 'bank', color: '#00b8d9', title: 'Bank connections', sub: 'Plaid server, connected banks, reconnect', right: chevron })}`)}
 
-      <div class="set-head">Celebrations</div>
-      <div class="set-group">
+      ${section('party', 'coin', '#ffb020', 'Celebrations', partySummary(), `
         ${row({ icon: 'coin', color: '#ffb020', title: 'Play celebrations', sub: 'When you add or update an account', right: toggle('sParty', state.settings.celebrate !== false, 'Celebrations') })}
         <div class="set-row set-previews">
           <span class="set-ic" style="--ic:#ff4d9d">${ICONS.play}</span>
@@ -936,23 +945,17 @@
             </span>
           </span>
         </div>
-      </div>
-      <p class="set-foot">The four animations take turns. Sound plays when your ringer is on.</p>
+        <p class="set-note">The four animations take turns. Sound plays when your ringer is on.</p>`)}
 
-      <div class="set-head">Data &amp; backup</div>
-      <div class="set-group">
+      ${section('data', 'download', '#0a84ff', 'Data &amp; backup', 'Back up, restore, import, demo data', `
         ${row({ id: 'sExport', tag: 'button', icon: 'download', color: '#0a84ff', title: 'Back up data', sub: 'Save a copy to Files or iCloud Drive', right: chevron })}
         ${row({ id: 'sImport', tag: 'button', icon: 'upload', color: '#0a84ff', title: 'Restore from backup', sub: 'Replace everything with a saved copy', right: chevron })}
         ${row({ id: 'sCsv', tag: 'button', icon: 'table', color: '#30b0c7', title: 'Import from a spreadsheet', sub: 'CSV file with dates and balances', right: chevron })}
         ${row({ id: 'sDemo', tag: 'button', icon: 'spark', color: '#af52de', title: 'Load demo data', sub: 'Try the app with sample accounts', right: chevron })}
-      </div>
-      <p class="set-foot">Spreadsheet columns: <code>date, account, balance</code>, plus an optional type (brokerage, retirement, crypto, checking, savings, credit, loan…). Dates look like 2026-11-17.</p>
+        <p class="set-note">Spreadsheet columns: <code>date, account, balance</code>, plus an optional type (brokerage, retirement, crypto, checking, savings, credit, loan…). Dates look like 2026-11-17.</p>`)}
 
-      ${standalone ? '' : `
-      <div class="set-head">App</div>
-      <div class="set-group">
-        ${row({ icon: 'phone', color: '#8e8e93', title: 'Add to Home Screen', sub: 'In Safari: Share → Add to Home Screen' })}
-      </div>`}
+      ${standalone ? '' : section('app', 'phone', '#8e8e93', 'App', 'Add to your Home Screen', `
+        ${row({ icon: 'phone', color: '#8e8e93', title: 'Add to Home Screen', sub: 'In Safari: Share → Add to Home Screen' })}`)}
 
       <div class="set-group set-gap">
         <button class="set-row danger" id="sClear"><span class="set-ic" style="--ic:#ff3b5c">${ICONS.trash}</span><span class="set-text"><span class="set-title">Erase all data</span></span></button>
@@ -962,8 +965,19 @@
       <input type="file" id="sFile" accept=".json,application/json" hidden/>
       <input type="file" id="sCsvFile" accept=".csv,text/csv,text/plain" hidden/>
     `, (root) => {
-      $('#sHide', root).onchange = (e) => { state.settings.hide = e.target.checked; save(); render(); };
-      $('#sParty', root).onchange = (e) => { state.settings.celebrate = e.target.checked; save(); };
+      root.querySelectorAll('.set-sec-head').forEach((h) => (h.onclick = () => {
+        const sec = h.closest('.set-sec'), key = sec.dataset.sec;
+        opened[key] = !sec.classList.contains('open');
+        sec.classList.toggle('open', opened[key]);
+        h.setAttribute('aria-expanded', String(opened[key]));
+        save();
+      }));
+      const refreshSummaries = () => {
+        $('#sum-security', root).textContent = secSummary();
+        $('#sum-party', root).textContent = partySummary();
+      };
+      $('#sHide', root).onchange = (e) => { state.settings.hide = e.target.checked; save(); render(); refreshSummaries(); };
+      $('#sParty', root).onchange = (e) => { state.settings.celebrate = e.target.checked; save(); refreshSummaries(); };
       root.querySelectorAll('[data-party]').forEach((b) => (b.onclick = () => { closeSheet(); window.Celebrate?.play(b.dataset.party); }));
       const sw = $('#sFace', root);
       faceIdAvailable().then((ok) => {
@@ -979,7 +993,7 @@
         } catch (e) {
           sw.checked = !sw.checked;
           if (e.name !== 'NotAllowedError' && e.name !== 'AbortError') toast("Couldn't set up Face ID");
-        } finally { sw.disabled = false; }
+        } finally { sw.disabled = false; refreshSummaries(); }
       };
       $('#sPlaid', root).onclick = () => plaidSettings(true);
       $('#sExport', root).onclick = exportData;
