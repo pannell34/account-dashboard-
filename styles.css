@@ -456,8 +456,7 @@ html.shield main { filter: blur(24px); }
 .gs-bar span { display: block; height: 100%; border-radius: 3px; box-shadow: 0 0 8px currentColor; }
 
 /* ---------- growth estimator ---------- */
-#forecastCard { display: flex; flex-direction: column; gap: 14px; }
-#forecastCard .card-head { margin-bottom: -4px; }
+#forecastCard .fold-inner { display: flex; flex-direction: column; gap: 14px; }
 .fc-total { font-size: 32px; font-weight: 800; letter-spacing: -.5px; font-variant-numeric: tabular-nums; margin-top: 2px;
   background: linear-gradient(90deg, #fff, #b8f3ff); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .fc-break { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 6px; font-size: 12px; color: var(--muted); }
@@ -522,3 +521,30 @@ button.set-row:active { background: rgba(255,255,255,.07); }
 .set-sec-inner .set-row + .set-row::before { left: 64px; }
 .set-note { font-size: 12px; color: var(--muted); line-height: 1.45; margin: 0; padding: 2px 16px 14px 22px; }
 .set-note code { font-size: 11px; }
+
+/* ---------- foldable home sections ---------- */
+.fold-head { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 30px; text-align: left; }
+.fold-title { font-size: 17px; font-weight: 700; white-space: nowrap; }
+.fold-sum { margin-left: auto; min-width: 0; font-size: 12.5px; font-weight: 600; color: var(--muted); white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; opacity: 0; transition: opacity .25s; font-variant-numeric: tabular-nums; }
+.fold.closed .fold-sum { opacity: 1; }
+.fold-chev { flex: none; display: grid; color: var(--muted); }
+.fold-chev svg { width: 18px; height: 18px; transition: transform .3s cubic-bezier(.2,.9,.25,1); }
+.fold:not(.closed) .fold-chev svg { transform: rotate(180deg); }
+.fold-body { display: grid; grid-template-rows: 1fr; transition: grid-template-rows .34s cubic-bezier(.2,.9,.25,1), visibility 0s; }
+.fold.closed .fold-body { grid-template-rows: 0fr; visibility: hidden; transition: grid-template-rows .34s cubic-bezier(.2,.9,.25,1), visibility 0s linear .34s; }
+.fold-inner { overflow: hidden; min-height: 0; }
+/* let charts keep bleeding to the card edges inside the fold */
+.card .fold-inner, .hero .fold-inner { margin: 0 -18px; padding: 0 18px; }
+.fold:not(.closed) > .fold-head { margin-bottom: 12px; }
+.hero.fold { transition: padding .3s; }
+.hero.fold.closed, .card.fold.closed { padding-top: 15px; padding-bottom: 15px; }
+.hero > .fold-head { margin-top: -4px; }
+.fold-plain > .fold-head { padding: 2px 2px 0; }
+.fold-plain.closed > .fold-head { margin-bottom: 0; }
+/* accounts: title+chevron on the left, buttons on the right */
+.accounts .section-head .fold-head { width: auto; flex: 1; min-width: 0; margin: 0; }
+.accounts .section-head .fold-sum { margin-left: 2px; }
+.accounts.closed .section-head { margin-bottom: 4px; }
+.accounts.closed #btnReorder { display: none; }
+.fold-head:active .fold-title { opacity: .7; }

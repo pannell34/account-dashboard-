@@ -64,6 +64,8 @@
 
   const money = (v) => (state.settings.hide ? '$••••••' : currency.format(v));
   const moneyShort = (v) => (state.settings.hide ? '$•••' : compact.format(v));
+  /** Compact signed amount with no cents, for tight spots like folded headers: +$967, −$1.2K. */
+  const signedTiny = (v) => (state.settings.hide ? '••••' : (v >= 0 ? '+' : '−') + (Math.abs(v) < 1000 ? '$' + Math.round(Math.abs(v)) : compact.format(Math.abs(v))));
   const signedShort = (v) => (state.settings.hide ? '••••' : (v >= 0 ? '+' : '−') + compact.format(Math.abs(v)));
   const signed = (v) => (state.settings.hide ? '••••' : (v >= 0 ? '+' : '−') + currency.format(Math.abs(v)));
   const pct = (v) => (isFinite(v) ? (v >= 0 ? '+' : '−') + Math.abs(v * 100).toFixed(2) + '%' : '—');
@@ -341,13 +343,14 @@
     state.plaid ||= { items: [], lastSync: 0 };
     const has = state.accounts.length > 0;
     $('#emptyState').hidden = has;
-    for (const sel of ['.hero', '#stats', '.accounts']) $(sel).hidden = !has;
+    for (const sel of ['.hero', '#statsFold', '.accounts']) $(sel).hidden = !has;
     document.querySelectorAll('main > .card:not(.empty)').forEach((c) => (c.hidden = !has));
     $('#fab').hidden = !has;
     $('#btnHide').innerHTML = state.settings.hide ? ICONS.eyeOff : ICONS.eye;
     renderSyncRow();
     if (!has) return;
     ensureOrder();
+    applyFolds();
 
     // Totals
     let assets = 0, liabs = 0;
@@ -416,11 +419,26 @@
     renderGrowth(total);
     renderForecast(total);
 
+    // one-line summaries shown on folded section headers
+    {
+      const s0 = netSeries(range)[0]?.v ?? total;
+      $('#sum-hero').textContent = `${moneyShort(total)} · ${pct(s0 ? (total - s0) / Math.abs(s0) : NaN)} ${range}`;
+      $('#sum-stats').textContent = `Assets ${moneyShort(assets)} · Liabilities ${moneyShort(liabs)}`;
+      const yr = rangeStart('1Y'), fd = firstDate();
+      const from = fd && fd <= yr ? yr : fd;
+      const v0 = from ? netAt(from) : 0;
+      $('#sum-growth').textContent = from && from < today() && v0
+        ? `${fd <= yr ? '1 year' : 'All time'} ${pct((total - v0) / Math.abs(v0))}` : '';
+      const n = state.accounts.length;
+      $('#sum-accounts').textContent = `${n} account${n === 1 ? '' : 's'}`;
+    }
+
     // Monthly bars
     const months = monthlyChanges();
     $('#bars').style.display = months.length ? '' : 'none';
     $('#barsEmpty').hidden = months.length > 0;
     if (months.length) barChart($('#bars'), months);
+    $('#sum-monthly').textContent = months.length ? `This month ${signedTiny(months[months.length - 1].v)}` : '';
 
     // Account list: collapsible Assets / Liabilities groups, in the user's own order
     $('#btnReorder').textContent = reordering ? 'Done' : 'Reorder';
@@ -443,6 +461,26 @@
   }
 
   /** The circle chart in the hero: breakdown by account type, with a link to the full list. */
+  // ---------------------------------------------------------------- foldable home sections
+  /** Puts every section in the open/closed state the user left it in. */
+  function applyFolds() {
+    const c = state.settings.collapsed || {};
+    document.querySelectorAll('[data-fold]').forEach((sec) => {
+      const key = sec.dataset.fold;
+      const closed = !!c[`fold:${key}`] && !(key === 'accounts' && reordering);
+      sec.classList.toggle('closed', closed);
+      sec.querySelector('.fold-head').setAttribute('aria-expanded', String(!closed));
+    });
+  }
+  document.addEventListener('click', (e) => {
+    const h = e.target.closest('[data-fold-toggle]');
+    if (!h) return;
+    const sec = h.closest('[data-fold]'), key = `fold:${sec.dataset.fold}`;
+    state.settings.collapsed = { ...(state.settings.collapsed || {}), [key]: !sec.classList.contains('closed') };
+    save();
+    applyFolds();
+  });
+
   function breakdown(list, total, centerLabel, emptyText, kind) {
     const byType = {};
     for (const a of list) {
@@ -534,6 +572,7 @@
     const added = monthly * 12 * fc.years;
     const growth = end.v - total - added;
     const endYear = new Date().getFullYear() + fc.years;
+    $('#sum-forecast').textContent = `${fc.years}Y → ${moneyShort(end.v)}`;
     const head = () => {
       $('#fcLabel').textContent = `Estimated net worth in ${fc.years} year${fc.years === 1 ? '' : 's'} (${endYear})`;
       $('#fcTotal').textContent = money(end.v);

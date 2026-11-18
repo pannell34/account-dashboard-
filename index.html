@@ -35,71 +35,85 @@
   </header>
 
   <main id="app">
-    <section class="hero glass">
-      <div class="view-toggle" id="viewToggle" role="tablist" aria-label="Chart">
-        <button data-view="net" role="tab">Net worth</button>
-        <button data-view="assets" role="tab">Assets</button>
-        <button data-view="liabs" role="tab">Liabilities</button>
-      </div>
-      <div class="hero-label" id="heroLabel">Total net worth</div>
-      <div class="hero-total" id="netTotal">$0.00</div>
-      <div class="hero-change" id="netChange"></div>
-      <div class="chart-wrap">
-        <svg id="mainChart" class="chart"></svg>
-        <div class="donut-view" id="donutView" hidden>
-          <svg id="donut" class="donut" viewBox="0 0 180 180"></svg>
-          <ul class="legend" id="legend"></ul>
+    <section class="hero glass fold" data-fold="hero">
+      <button class="fold-head" data-fold-toggle aria-expanded="true"><span class="g-bar" style="background:linear-gradient(180deg,#7C5CFF,#00D4FF)"></span><span class="fold-title">Overview</span><span class="fold-sum" id="sum-hero"></span><span class="fold-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></button>
+      <div class="fold-body"><div class="fold-inner">
+        <div class="view-toggle" id="viewToggle" role="tablist" aria-label="Chart">
+          <button data-view="net" role="tab">Net worth</button>
+          <button data-view="assets" role="tab">Assets</button>
+          <button data-view="liabs" role="tab">Liabilities</button>
         </div>
-      </div>
-      <div class="ranges" id="ranges"></div>
+        <div class="hero-label" id="heroLabel">Total net worth</div>
+        <div class="hero-total" id="netTotal">$0.00</div>
+        <div class="hero-change" id="netChange"></div>
+        <div class="chart-wrap">
+          <svg id="mainChart" class="chart"></svg>
+          <div class="donut-view" id="donutView" hidden>
+            <svg id="donut" class="donut" viewBox="0 0 180 180"></svg>
+            <ul class="legend" id="legend"></ul>
+          </div>
+        </div>
+        <div class="ranges" id="ranges"></div>
+      </div></div>
     </section>
 
-    <section class="stats" id="stats"></section>
-
-    <section class="glass card">
-      <div class="card-head"><h2>Growth</h2><span class="muted small">net worth</span></div>
-      <div class="growth-grid" id="growth"></div>
-      <p class="growth-avg" id="growthAvg"></p>
+    <section class="fold fold-plain" id="statsFold" data-fold="stats">
+      <button class="fold-head" data-fold-toggle aria-expanded="true"><span class="g-bar" style="background:linear-gradient(180deg,#00E096,#FF4D9D)"></span><span class="fold-title">Highlights</span><span class="fold-sum" id="sum-stats"></span><span class="fold-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></button>
+      <div class="fold-body"><div class="fold-inner"><div class="stats" id="stats"></div></div></div>
     </section>
 
-    <section class="glass card">
-      <div class="card-head"><h2>Monthly change</h2><span class="muted small">last 12 months</span></div>
-      <svg id="bars" class="chart bars"></svg>
-      <p class="muted small empty-note" id="barsEmpty" hidden>Update your balances across a few months to see trends here.</p>
+    <section class="glass card fold" data-fold="growth">
+      <button class="fold-head" data-fold-toggle aria-expanded="true"><span class="g-bar" style="background:linear-gradient(180deg,#00E096,#00D4FF)"></span><span class="fold-title">Growth</span><span class="fold-sum" id="sum-growth"></span><span class="fold-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></button>
+      <div class="fold-body"><div class="fold-inner">
+        <div class="growth-grid" id="growth"></div>
+        <p class="growth-avg" id="growthAvg"></p>
+      </div></div>
     </section>
 
-    <section class="glass card" id="forecastCard">
-      <div class="card-head"><h2>Growth estimator</h2><span class="muted small">forecast</span></div>
-      <div class="fc-head">
-        <div class="muted small" id="fcLabel"></div>
-        <div class="fc-total" id="fcTotal"></div>
-        <div class="fc-break" id="fcBreak"></div>
-      </div>
-      <div class="fc-chart"><svg id="fcChart" class="chart"></svg></div>
-      <div class="chips fc-years" id="fcYears"></div>
-      <div class="field">
-        <label for="fcRate">Growth per year <b id="fcRateVal"></b></label>
-        <input type="range" id="fcRate" min="0" max="20" step="0.5" />
-        <div class="chips" id="fcRates"></div>
-      </div>
-      <div class="field">
-        <label for="fcMonthly">Added each month</label>
-        <div class="money-input"><input id="fcMonthly" inputmode="decimal" autocomplete="off" /></div>
-        <p class="hint" id="fcHint"></p>
-      </div>
-      <p class="hint">An estimate only — real returns go up and down. Growth is applied monthly to a positive net worth.</p>
+    <section class="glass card fold" data-fold="monthly">
+      <button class="fold-head" data-fold-toggle aria-expanded="true"><span class="g-bar" style="background:linear-gradient(180deg,#00D4FF,#4D7CFF)"></span><span class="fold-title">Monthly change</span><span class="fold-sum" id="sum-monthly"></span><span class="fold-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></button>
+      <div class="fold-body"><div class="fold-inner">
+        <svg id="bars" class="chart bars"></svg>
+        <p class="muted small empty-note" id="barsEmpty" hidden>Update your balances across a few months to see trends here.</p>
+      </div></div>
     </section>
 
-    <section class="accounts">
+    <section class="glass card fold" id="forecastCard" data-fold="forecast">
+      <button class="fold-head" data-fold-toggle aria-expanded="true"><span class="g-bar" style="background:linear-gradient(180deg,#7C5CFF,#FF4D9D)"></span><span class="fold-title">Growth estimator</span><span class="fold-sum" id="sum-forecast"></span><span class="fold-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></button>
+      <div class="fold-body"><div class="fold-inner">
+        <div class="fc-head">
+          <div class="muted small" id="fcLabel"></div>
+          <div class="fc-total" id="fcTotal"></div>
+          <div class="fc-break" id="fcBreak"></div>
+        </div>
+        <div class="fc-chart"><svg id="fcChart" class="chart"></svg></div>
+        <div class="chips fc-years" id="fcYears"></div>
+        <div class="field">
+          <label for="fcRate">Growth per year <b id="fcRateVal"></b></label>
+          <input type="range" id="fcRate" min="0" max="20" step="0.5" />
+          <div class="chips" id="fcRates"></div>
+        </div>
+        <div class="field">
+          <label for="fcMonthly">Added each month</label>
+          <div class="money-input"><input id="fcMonthly" inputmode="decimal" autocomplete="off" /></div>
+          <p class="hint" id="fcHint"></p>
+        </div>
+        <p class="hint">An estimate only — real returns go up and down. Growth is applied monthly to a positive net worth.</p>
+      </div></div>
+    </section>
+
+    <section class="accounts fold fold-plain" data-fold="accounts">
       <div class="section-head">
-        <h2>Accounts</h2>
+        <button class="fold-head" data-fold-toggle aria-expanded="true"><span class="g-bar" style="background:linear-gradient(180deg,#FFB020,#FF4D9D)"></span><span class="fold-title">Accounts</span><span class="fold-sum" id="sum-accounts"></span><span class="fold-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></button>
         <div class="head-btns">
           <button class="chip-btn alt" id="btnReorder">Reorder</button>
           <button class="chip-btn" id="btnQuick">Update balances</button>
         </div>
       </div>
-      <button class="sync-row" id="syncRow" hidden></button>
-      <div id="accountList"></div>
+      <div class="fold-body"><div class="fold-inner">
+        <button class="sync-row" id="syncRow" hidden></button>
+        <div id="accountList"></div>
+      </div></div>
     </section>
 
     <div id="emptyState" class="glass card empty" hidden>
