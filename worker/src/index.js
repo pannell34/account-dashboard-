@@ -115,6 +115,26 @@ export default {
           return json({ results });
         }
 
+        case '/transactions': {
+          // recent transactions for one connection (optionally one account), newest first
+          const { t } = await openItem(env, body.item);
+          const days = Math.min(Math.max(Number(body.days) || 60, 7), 180);
+          const day = (d) => d.toISOString().slice(0, 10);
+          const end = new Date(), start = new Date(Date.now() - days * 86400000);
+          const options = { count: 250, offset: 0 };
+          if (body.account_id) options.account_ids = [String(body.account_id)];
+          let all = [], total = Infinity;
+          while (all.length < total && all.length < 1000) {
+            const r = await plaid(env, '/transactions/get', {
+              access_token: t, start_date: day(start), end_date: day(end), options: { ...options, offset: all.length },
+            });
+            total = r.total_transactions ?? 0;
+            if (!r.transactions?.length) break;
+            all = all.concat(r.transactions);
+          }
+          return json({ transactions: all.map(slimTx) });
+        }
+
         case '/remove': {
           const { t } = await openItem(env, body.item);
           try {
@@ -169,6 +189,19 @@ function slim(a) {
     current: a.balances?.current ?? null,
     available: a.balances?.available ?? null,
     currency: a.balances?.iso_currency_code || null,
+  };
+}
+
+function slimTx(t) {
+  return {
+    id: t.transaction_id,
+    account_id: t.account_id,
+    date: t.date,
+    name: t.name || '',
+    merchant_name: t.merchant_name || '',
+    amount: t.amount,            // Plaid: positive = money leaving the account
+    pending: !!t.pending,
+    check_number: t.check_number || null,
   };
 }
 

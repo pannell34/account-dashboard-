@@ -43,6 +43,13 @@
     phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg>',
     trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>',
     play: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',
+    layout: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="7" rx="2"/><rect x="3" y="14" width="8" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>',
+    tiles: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="5" height="12" rx="1.5"/><rect x="9.5" y="6" width="5" height="12" rx="1.5"/><rect x="16" y="6" width="5" height="12" rx="1.5"/></svg>',
+    wallet: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h13v4"/><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M16 13.5h2"/></svg>',
+    trend: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8M15 7h6v6"/></svg>',
+    bars: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+    telescope: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l15-9M8 21l4-7 4 7M18 3l3 5"/></svg>',
+    list: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>',
     shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg>',
     gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
   };
@@ -337,14 +344,28 @@
     return `<span class="${cls}">${signed(delta)}</span><span class="badge ${cls}">${pct(p)}</span><span class="muted small">${esc(label)}</span>`;
   }
 
+  /** Everything on the home screen that can be switched off in Settings → Home screen. */
+  const HOME_SECTIONS = [
+    { key: 'hero', title: 'Overview', sub: 'Net worth chart with Assets / Liabilities views', icon: 'chart', color: '#7C5CFF' },
+    { key: 'stats', title: 'Highlights', sub: 'Assets, Liabilities and Top mover tiles', icon: 'tiles', color: '#00c853' },
+    { key: 'cash', title: 'Cash check', sub: 'Can checking cover the bills before payday', icon: 'wallet', color: '#ff9f0a' },
+    { key: 'growth', title: 'Growth', sub: 'Net worth change over time', icon: 'trend', color: '#00b8d9' },
+    { key: 'monthly', title: 'Monthly change', sub: 'Bar chart of the last 12 months', icon: 'bars', color: '#0a84ff' },
+    { key: 'forecast', title: 'Growth estimator', sub: 'Forecast 1 to 30 years out', icon: 'telescope', color: '#af52de' },
+    { key: 'accounts', title: 'Accounts', sub: 'Your list of assets and liabilities', icon: 'list', color: '#ff375f' },
+  ];
+  const homeHidden = () => (state.settings.homeHidden ||= {});
+
   const rangeLabel = (r) => ({ '1W': 'past week', '1M': 'past month', '3M': 'past 3 months', YTD: 'this year', '1Y': 'past year', ALL: 'all time' }[r]);
 
   function render() {
     state.plaid ||= { items: [], lastSync: 0 };
     const has = state.accounts.length > 0;
     $('#emptyState').hidden = has;
-    for (const sel of ['.hero', '#statsFold', '.accounts']) $(sel).hidden = !has;
-    document.querySelectorAll('main > .card:not(.empty)').forEach((c) => (c.hidden = !has));
+    // each home section shows only when there are accounts and it's switched on in Settings
+    const off = homeHidden();
+    document.querySelectorAll('main [data-fold]').forEach((sec) => (sec.hidden = !has || !!off[sec.dataset.fold]));
+    $('#allHidden').hidden = !has || HOME_SECTIONS.some((x) => !off[x.key]);
     $('#fab').hidden = !has;
     $('#btnHide').innerHTML = state.settings.hide ? ICONS.eyeOff : ICONS.eye;
     renderSyncRow();
@@ -418,6 +439,7 @@
 
     renderGrowth(total);
     renderForecast(total);
+    renderCashMini();
 
     // one-line summaries shown on folded section headers
     {
@@ -461,6 +483,426 @@
   }
 
   /** The circle chart in the hero: breakdown by account type, with a link to the full list. */
+  // ---------------------------------------------------------------- Monthly Cash Check
+  // Can checking cover the bills still to come out before the next payday?
+  //   left over = checking available − Apple Card − mortgage − uncleared recurring bills due before payday
+  // Paper checks clear whenever they're deposited: best case after payday, worst case before.
+  const CC_TYPES = { auto: 'Auto-draft', check: 'Paper check', card: 'Varies monthly' };
+  const cents = (v) => Math.round(v * 100) / 100;
+  const daysIn = (y, m) => new Date(y, m + 1, 0).getDate();
+  /** y/m may overflow (m = 12 → next January); the day is clamped to the month's length. */
+  const dateOf = (y, m, d) => {
+    const first = new Date(y, m, 1), Y = first.getFullYear(), M = first.getMonth();
+    return isoDate(new Date(Y, M, Math.min(d, daysIn(Y, M))));
+  };
+  const shortDay = (d) => fmtDate(d, { weekday: 'short', month: 'short', day: 'numeric' });
+
+  function ccSettings() {
+    if (!state.cash) {
+      state.cash = {
+        items: [
+          { id: uid(), name: 'Apple Card payment', type: 'card', amount: null, day: 30, match: 'apple credit card, applecard, apple card' },
+          { id: uid(), name: 'Rocket Mortgage', type: 'auto', amount: 2370.27, day: 3, match: 'rocket mortgage' },
+          { id: uid(), name: 'Allstate', type: 'auto', amount: 188.40, day: 23, match: 'allstate' },
+          { id: uid(), name: 'Car payment to grandma', type: 'check', amount: 150, day: 5, match: '' },
+          { id: uid(), name: "Phone bill to Tabitha's mom", type: 'check', amount: 128.91, day: 9, match: '' },
+        ],
+        paycheck: { amount: 2963.60, next: '2026-12-04', every: 14 },
+        cycleStartDay: 10,
+        cushion: 0,
+        checkingId: null,   // which account is "main checking" ('none' = type the balance in)
+        fromId: null,       // where transfers come from
+        balance: null,      // { value, date } a typed-in checking balance
+        amounts: {},        // { [cycle]: { [itemId]: amount } } for amounts that vary (Apple Card)
+        cleared: {},        // { [cycle]: { [itemId]: { by: 'you' | 'plaid', date, name, amount, pending, skip } } }
+        lastPay: {},        // { [itemId]: { amount, date, name } } latest matching payment seen in checking
+        txAt: 0,
+      };
+    }
+    return state.cash;
+  }
+
+  /** Next payday strictly after today, stepping forward from the date you entered. */
+  function nextPayday(t = today()) {
+    const p = ccSettings().paycheck;
+    let d = p.next;
+    while (d <= t) d = addDays(d, p.every || 14);
+    return d;
+  }
+
+  /** A cycle runs from the start day to the day before it next month (e.g. Nov 10 – Dec 9). */
+  function cashCycle(t = today()) {
+    const sd = Math.min(Math.max(Math.round(+ccSettings().cycleStartDay) || 1, 1), 28);
+    const d = parseDate(t);
+    const start = dateOf(d.getFullYear(), d.getMonth() - (d.getDate() < sd ? 1 : 0), sd);
+    const s = parseDate(start), y = s.getFullYear(), m = s.getMonth();
+    return { key: start, start, end: addDays(dateOf(y, m + 1, sd), -1), y, m, sd };
+  }
+  const dueDate = (cyc, day) => (day >= cyc.sd ? dateOf(cyc.y, cyc.m, day) : dateOf(cyc.y, cyc.m + 1, day));
+
+  function checkingAccount() {
+    const cc = ccSettings();
+    if (cc.checkingId === 'none') return null;
+    let a = state.accounts.find((x) => x.id === cc.checkingId);
+    if (!a) {
+      a = state.accounts.find((x) => x.type === 'checking' && x.plaid) || state.accounts.find((x) => x.type === 'checking') || null;
+      cc.checkingId = a ? a.id : null;
+    }
+    return a;
+  }
+
+  /** Typed-in balance wins for the day it was typed; otherwise Plaid's available balance, then the latest balance. */
+  function checkingBalance() {
+    const cc = ccSettings(), a = checkingAccount();
+    if (cc.balance && (cc.balance.date === today() || !a)) return { value: cc.balance.value, source: 'typed' };
+    if (a) {
+      if (a.plaid?.available != null && isFinite(a.plaid.available)) return { value: a.plaid.available, source: 'plaid', account: a };
+      const l = latest(a);
+      if (l) return { value: l.balance, source: 'app', account: a };
+    }
+    return null;
+  }
+
+  function itemAmount(it, cyc) {
+    const cc = ccSettings();
+    if (it.type !== 'card') return { value: +it.amount || 0, kind: 'fixed' };
+    const entered = cc.amounts[cyc.key]?.[it.id];
+    if (entered != null) return { value: entered, kind: 'entered' };
+    const lp = cc.lastPay[it.id];
+    if (lp) return { value: lp.amount, kind: 'estimate', label: `Estimate - update from Wallet · last payment ${fmtDate(lp.date, { month: 'short', day: 'numeric' })}` };
+    const prev = Object.keys(cc.amounts).filter((k) => k < cyc.key).sort().reverse().map((k) => cc.amounts[k][it.id]).find((v) => v != null);
+    if (prev != null) return { value: prev, kind: 'estimate', label: "Estimate - update from Wallet · last month's amount" };
+    return { value: 0, kind: 'missing', label: "Enter this month's amount from Wallet" };
+  }
+
+  function computeCash() {
+    const cc = ccSettings(), cyc = cashCycle(), pay = nextPayday(), t = today();
+    const cl = cc.cleared[cyc.key] || {};
+    const rows = cc.items.map((it) => {
+      const due = dueDate(cyc, +it.day || 1), amt = itemAmount(it, cyc), c = cl[it.id];
+      const cleared = !!(c && !c.skip);
+      let status, worst = false, best = false;
+      if (cleared) status = 'cleared';
+      else if (it.type === 'check') { status = 'check'; worst = true; }
+      else if (due < pay) { status = due < t ? 'pastdue' : 'due'; worst = best = true; }
+      else status = 'after';
+      return { it, due, amt, c, status, worst, best };
+    });
+    const bal = checkingBalance();
+    const owed = (k) => cents(rows.filter((r) => r[k]).reduce((sum, r) => sum + r.amt.value, 0));
+    const result = (k) => {
+      if (!bal) return null;
+      const cushion = Math.max(0, +cc.cushion || 0);
+      const left = cents(bal.value - owed(k));
+      return {
+        left, cushion, owed: owed(k),
+        transfer: left < 0 ? cents(-left + cushion) : 0,          // what to move in (shortfall + cushion)
+        topUp: left >= 0 && cushion > left ? cents(cushion - left) : 0, // only needed to keep the cushion
+      };
+    };
+    const missing = rows.filter((x) => x.amt.kind === 'missing' && x.worst).map((x) => x.it.name);
+    return { cc, cyc, pay, rows, bal, missing, worst: result('worst'), best: result('best') };
+  }
+
+  // ---- Plaid transactions: auto-clear bills, and estimate the Apple Card payment
+  const matchWords = (it) => String(it.match || '').toLowerCase().split(',').map((w) => w.trim()).filter(Boolean);
+  function txMatches(it, tx) {
+    if (!(tx.amount > 0)) return false; // money leaving checking only
+    const text = `${tx.name} ${tx.merchant_name}`.toLowerCase();
+    if (it.type === 'check') return /\bcheck\b/.test(text) && Math.abs(tx.amount - (+it.amount || 0)) < 0.005;
+    return matchWords(it).some((w) => text.includes(w));
+  }
+  function applyCashTx(txs) {
+    const cc = ccSettings(), cyc = cashCycle(), t = today();
+    const cl = (cc.cleared[cyc.key] ||= {});
+    for (const it of cc.items) {
+      const hits = txs.filter((tx) => txMatches(it, tx)).sort((a, b) => (a.date < b.date ? 1 : -1));
+      if (it.type === 'card') {
+        const last = hits.find((h) => !h.pending) || hits[0];
+        if (last) cc.lastPay[it.id] = { amount: last.amount, date: last.date, name: last.name };
+      }
+      const now = hits.find((h) => h.date >= cyc.start && h.date <= t);
+      if (now && !cl[it.id]) cl[it.id] = { by: 'plaid', date: now.date, name: now.name, amount: now.amount, pending: now.pending };
+    }
+  }
+  let ccLoading = false;
+  /** Reads recent checking transactions through your Plaid server (at most every 10 minutes unless forced). */
+  async function refreshCashTx({ force = false } = {}) {
+    const cc = ccSettings(), a = checkingAccount();
+    if (!plaidReady() || !a?.plaid || ccLoading) return 'skip';
+    if (!force && Date.now() - (cc.txAt || 0) < 10 * 60 * 1000) return 'fresh';
+    const item = state.plaid.items.find((i) => i.id === a.plaid.itemId);
+    if (!item) return 'skip';
+    ccLoading = true;
+    try {
+      const { transactions } = await plaidApi('/transactions', { item: item.enc, days: 75, account_id: a.plaid.accountId });
+      applyCashTx(transactions || []);
+      cc.txAt = Date.now(); cc.txError = null;
+      save();
+      return 'ok';
+    } catch (e) {
+      cc.txError = e.message; save();
+      return 'error';
+    } finally { ccLoading = false; }
+  }
+
+  // ---- home card
+  function caseTile(title, x, sub) {
+    const short = x.left < 0;
+    return `<div class="cc-case ${short ? 'short' : 'ok'}">
+      <div class="cc-k">${title}</div>
+      <div class="cc-v">${short ? 'Transfer needed' : 'Left over'}</div>
+      <div class="cc-n">${money(Math.abs(x.left))}</div>
+      ${short && x.cushion ? `<div class="cc-x">With your ${money(x.cushion)} cushion: transfer ${money(x.transfer)}</div>` : ''}
+      ${x.topUp ? `<div class="cc-x">Transfer ${money(x.topUp)} to keep a ${money(x.cushion)} cushion</div>` : ''}
+      <div class="cc-s">${sub}</div>
+    </div>`;
+  }
+  function renderCashMini() {
+    const r = computeCash();
+    const box = $('#ccMini');
+    if (!r.bal) {
+      box.innerHTML = '<p class="hint">Pick your checking account or type its balance to see if it covers the bills before payday.</p>';
+      $('#sum-cash').textContent = 'Set up';
+      return;
+    }
+    box.innerHTML = (r.missing.length ? `<div class="cc-warn">⚠︎ ${r.missing.map(esc).join(', ')} not entered yet — counted as $0</div>` : '') + `<div class="cc-cases">
+        ${caseTile('Worst case', r.worst, 'Paper checks clear before payday')}
+        ${caseTile('Best case', r.best, 'Paper checks clear after payday')}
+      </div>
+      <p class="cc-meta">Checking ${money(r.bal.value)} · next payday ${shortDay(r.pay)}</p>`;
+    if (r.missing.length) { $('#sum-cash').textContent = 'Enter Apple Card amount'.replace('Apple Card', r.missing.length === 1 ? r.missing[0].replace(/ payment$/i, '') : 'bill'); return; }
+    $('#sum-cash').textContent = r.worst.left < 0 ? `Worst case: short ${money(-r.worst.left)}` : `Left over ${money(r.worst.left)}`;
+  }
+
+  // ---- the full screen
+  const STATUS = {
+    cleared: ['ok', 'Cleared this cycle'],
+    due: ['due', 'Counted · due before payday'],
+    pastdue: ['warn', 'Counted · due date passed — mark cleared if it already came out'],
+    after: ['muted', 'Not counted · due after payday'],
+    check: ['check', 'Worst case only · clears when deposited'],
+  };
+  function cashRowsHTML(r) {
+    return r.rows.map(({ it, due, amt, c, status }) => {
+      const [cls, text] = STATUS[status];
+      const by = c && !c.skip
+        ? (c.by === 'plaid'
+          ? `✓ Matched “${esc(c.name)}” ${money(c.amount)} on ${fmtDate(c.date, { month: 'short', day: 'numeric' })}${c.pending ? ' (pending)' : ''} — tap Undo if that was a different payment`
+          : '✓ You marked this cleared')
+        : '';
+      const amountCell = it.type === 'card'
+        ? `<div class="money-input sm"><input data-camt="${it.id}" inputmode="decimal" placeholder="0.00" value="${amt.kind === 'entered' ? amt.value.toFixed(2) : ''}" aria-label="${esc(it.name)} amount"/></div>`
+        : `<div class="cc-amt">${money(amt.value)}</div>`;
+      return `<div class="cc-row ${status}">
+        <div class="cc-row-top">
+          <div class="cc-name">${esc(it.name)}<span class="cc-type ${it.type}">${CC_TYPES[it.type] || ''}</span></div>
+          ${amountCell}
+        </div>
+        ${it.type === 'card' && amt.kind !== 'entered' ? `<div class="cc-est ${amt.kind}">${esc(amt.label)}${amt.kind === 'estimate' ? ` · using ${money(amt.value)}` : ''}</div>` : ''}
+        <div class="cc-row-sub"><span>${it.type === 'check' ? 'Usually clears' : 'Due'} ${shortDay(due)}</span><span class="cc-status ${cls}">${text}</span></div>
+        ${by ? `<div class="cc-by">${by}</div>` : ''}
+        <button class="cc-clear ${status === 'cleared' ? 'undo' : ''}" data-clear="${it.id}">${status === 'cleared' ? 'Undo' : 'Mark cleared this cycle'}</button>
+      </div>`;
+    }).join('');
+  }
+
+  function cashSheet() {
+    const cc = ccSettings();
+    checkingAccount();
+    const assets = state.accounts.filter((a) => !isLiab(a));
+    openSheet(`
+      <div class="cc-title"><h3>Monthly Cash Check</h3><button class="chip-btn alt" id="ccEdit">Edit bills</button></div>
+      <p class="hint" id="ccMeta"></p>
+      <div class="cc-block">
+        <div class="field"><label for="ccAcct">Checking account</label>
+          <select id="ccAcct">${assets.map((a) => `<option value="${a.id}">${esc(a.name)}${a.plaid?.mask ? ` ••${esc(a.plaid.mask)}` : ''}</option>`).join('')}<option value="none">None — I'll type the balance</option></select></div>
+        <div class="field"><label for="ccBal">Available balance</label>
+          <div class="money-input"><input id="ccBal" inputmode="decimal" autocomplete="off"/></div>
+          <p class="hint" id="ccBalHint"></p></div>
+      </div>
+      <div class="cc-cases big" id="ccCases"></div>
+      <h2 class="cc-h">Bills this cycle</h2>
+      <div class="cc-rows" id="ccRows"></div>
+      <h2 class="cc-h">Transfer</h2>
+      <div class="cc-block">
+        <div class="field"><label for="ccCushion">Cushion (optional)</label>
+          <div class="money-input"><input id="ccCushion" inputmode="decimal" placeholder="0" value="${cc.cushion ? cc.cushion : ''}"/></div>
+          <p class="hint">Extra to keep in checking on top of the bills. It's added to the suggested transfer.</p></div>
+        <div class="field"><label for="ccFrom">Transfer from</label><select id="ccFrom"></select></div>
+        <div class="cc-after" id="ccAfter"></div>
+      </div>
+      <h2 class="cc-h">How it adds up</h2>
+      <div class="cc-math" id="ccMath"></div>
+      <p class="hint" id="ccTx"></p>
+    `, (root) => {
+      const r0 = computeCash();
+      $('#ccAcct', root).value = cc.checkingId === 'none' || !checkingAccount() ? 'none' : cc.checkingId;
+      const fill = (rows = true) => updateCash(root, rows);
+      $('#ccAcct', root).onchange = (e) => {
+        cc.checkingId = e.target.value; cc.balance = null; save();
+        fill(); render();
+        refreshCashTx({ force: true }).then((x) => { if (x === 'ok') { fill(); render(); } });
+      };
+      $('#ccBal', root).oninput = (e) => {
+        const v = parseMoney(e.target.value);
+        cc.balance = e.target.value.trim() && isFinite(v) ? { value: v, date: today() } : null;
+        save(); fill(false); render();
+      };
+      $('#ccCushion', root).oninput = (e) => {
+        const v = parseMoney(e.target.value); cc.cushion = isFinite(v) ? Math.max(0, v) : 0;
+        save(); fill(false); render();
+      };
+      $('#ccFrom', root).onchange = (e) => { cc.fromId = e.target.value; save(); fill(false); };
+      $('#ccEdit', root).onclick = cashEditSheet;
+      const rowsEl = $('#ccRows', root);
+      rowsEl.addEventListener('input', (e) => {
+        const inp = e.target.closest('[data-camt]'); if (!inp) return;
+        const key = cashCycle().key, v = parseMoney(inp.value);
+        cc.amounts[key] ||= {};
+        if (inp.value.trim() && isFinite(v)) cc.amounts[key][inp.dataset.camt] = v; else delete cc.amounts[key][inp.dataset.camt];
+        save(); fill(false); render();
+      });
+      rowsEl.addEventListener('change', (e) => { if (e.target.closest('[data-camt]')) fill(); });
+      rowsEl.addEventListener('click', (e) => {
+        const b = e.target.closest('[data-clear]'); if (!b) return;
+        const key = cashCycle().key, id = b.dataset.clear;
+        const cl = (cc.cleared[key] ||= {}), c = cl[id];
+        if (c && !c.skip) { if (c.by === 'plaid') cl[id] = { ...c, skip: true }; else delete cl[id]; } // skip: don't re-match it
+        else cl[id] = { by: 'you', date: today() };
+        save(); fill(); render();
+      });
+      fill();
+      if (r0.bal?.source !== 'typed') $('#ccBal', root).value = r0.bal ? r0.bal.value.toFixed(2) : '';
+      refreshCashTx().then((x) => { if (x === 'ok' || x === 'error') { fill(); render(); } });
+    });
+  }
+
+  function updateCash(root, rows = true) {
+    const r = computeCash(), cc = r.cc;
+    $('#ccMeta', root).innerHTML = `Cycle ${fmtDate(r.cyc.start, { month: 'short', day: 'numeric' })} – ${fmtDate(r.cyc.end, { month: 'short', day: 'numeric' })} · next payday <b>${shortDay(r.pay)}</b> (+${money(cc.paycheck.amount)})`;
+    const balEl = $('#ccBal', root);
+    if (document.activeElement !== balEl && r.bal) balEl.value = r.bal.value.toFixed(2);
+    const a = checkingAccount();
+    $('#ccBalHint', root).innerHTML = !r.bal ? 'Type your checking available balance.'
+      : r.bal.source === 'typed' ? (a ? `Typed in for today. <button class="link-inline" id="ccUseSync">Use ${esc(a.name)}'s synced balance</button>` : 'Typed in.')
+      : r.bal.source === 'plaid' ? `Available balance from Plaid · updated ${ago(a.plaid.syncedAt || state.plaid.lastSync)}`
+      : `Latest balance saved for ${esc(a.name)}`;
+    const useSync = $('#ccUseSync', root);
+    if (useSync) useSync.onclick = () => { cc.balance = null; save(); updateCash(root); render(); };
+
+    $('#ccCases', root).innerHTML = (r.missing.length ? `<div class="cc-warn wide">⚠︎ ${r.missing.map(esc).join(', ')} not entered yet — counted as $0. Enter it below.</div>` : '') + (r.bal
+      ? caseTile('Worst case', r.worst, 'Paper checks clear before payday') + caseTile('Best case', r.best, 'Paper checks clear after payday')
+      : '<p class="hint">Enter a balance to see the result.</p>');
+    if (rows) $('#ccRows', root).innerHTML = cashRowsHTML(r);
+
+    // transfer source
+    const from = $('#ccFrom', root);
+    const others = state.accounts.filter((x) => !isLiab(x) && x.id !== a?.id);
+    if (!cc.fromId || !others.some((x) => x.id === cc.fromId)) cc.fromId = (others.find((x) => x.type === 'savings') || others[0])?.id || null;
+    if (from.options.length !== others.length || [...from.options].some((o, i) => o.value !== others[i]?.id)) {
+      from.innerHTML = others.length ? others.map((x) => `<option value="${x.id}">${esc(x.name)}</option>`).join('') : '<option value="">No other accounts</option>';
+    }
+    if (cc.fromId) from.value = cc.fromId;
+    const src = others.find((x) => x.id === cc.fromId);
+    const after = $('#ccAfter', root);
+    if (!r.bal || !src) after.innerHTML = '';
+    else {
+      const sb = latest(src)?.balance ?? 0;
+      const line = (label, amt) => amt > 0
+        ? `<div class="cc-after-row"><span>${label}: move <b>${money(amt)}</b></span><span>${esc(src.name)} ${money(sb)} → <b>${money(sb - amt)}</b></span></div>` : '';
+      const w = r.worst.transfer || r.worst.topUp, b = r.best.transfer || r.best.topUp;
+      after.innerHTML = (line('Worst case', w) + line('Best case', b)) || `<div class="cc-after-row ok">No transfer needed in either case. ${esc(src.name)} stays at ${money(sb)}.</div>`;
+    }
+
+    // the math, line by line
+    const m = $('#ccMath', root);
+    if (!r.bal) m.innerHTML = '';
+    else {
+      const li = (label, v, cls = '') => `<div class="cc-line ${cls}"><span>${label}</span><span>${v}</span></div>`;
+      const bestRows = r.rows.filter((x) => x.best), worstOnly = r.rows.filter((x) => x.worst && !x.best);
+      const skipped = r.rows.filter((x) => !x.worst);
+      m.innerHTML = li('Checking available', money(r.bal.value))
+        + bestRows.map((x) => li(`− ${esc(x.it.name)} <small>${fmtDate(x.due, { month: 'short', day: 'numeric' })}</small>`, money(x.amt.value))).join('')
+        + li('= Best case', `${r.best.left < 0 ? '−' : ''}${money(Math.abs(r.best.left))}`, `total ${r.best.left < 0 ? 'down' : 'up'}`)
+        + worstOnly.map((x) => li(`− ${esc(x.it.name)} <small>paper check</small>`, money(x.amt.value))).join('')
+        + li('= Worst case', `${r.worst.left < 0 ? '−' : ''}${money(Math.abs(r.worst.left))}`, `total ${r.worst.left < 0 ? 'down' : 'up'}`)
+        + (skipped.length ? `<div class="cc-skip">Not counted: ${skipped.map((x) => `${esc(x.it.name)} (${x.status === 'cleared' ? 'cleared' : 'after payday'})`).join(', ')}</div>` : '');
+    }
+
+    const tx = $('#ccTx', root);
+    tx.textContent = !plaidReady() || !a?.plaid
+      ? 'Tip: link checking with Plaid and bills are marked cleared automatically when the payment posts.'
+      : cc.txError ? `Couldn't read checking transactions: ${cc.txError}`
+      : cc.txAt ? `Checked ${esc(a.name)} transactions ${ago(cc.txAt)} — matching payments are marked cleared automatically.` : 'Reading checking transactions…';
+  }
+
+  function cashEditSheet() {
+    const cc = ccSettings();
+    const itemHTML = (it) => `<div class="ce-item" data-id="${it.id}">
+      <div class="ce-top"><input class="ce-name" data-f="name" value="${esc(it.name)}" aria-label="Bill name"/><button class="ce-del" data-del="${it.id}" aria-label="Delete">×</button></div>
+      <div class="ce-grid">
+        <div class="field"><label>Amount</label>${it.type === 'card'
+          ? '<div class="ce-varies">Varies — enter it each month</div>'
+          : `<div class="money-input"><input data-f="amount" inputmode="decimal" value="${it.amount ?? ''}"/></div>`}</div>
+        <div class="field"><label>Day</label><input data-f="day" type="number" inputmode="numeric" min="1" max="31" value="${it.day}"/></div>
+        <div class="field"><label>Type</label><select data-f="type">${Object.entries({ auto: 'Auto-draft', check: 'Paper check', card: 'Varies' }).map(([k, v]) => `<option value="${k}" ${k === it.type ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
+      </div>
+      ${it.type === 'check'
+        ? '<p class="hint">Matched automatically: a “Check …” transaction for exactly this amount.</p>'
+        : `<div class="field"><label>Match in checking transactions</label><input data-f="match" value="${esc(it.match || '')}" placeholder="e.g. allstate" autocapitalize="off"/><p class="hint">Words to look for in the payment's name. Separate options with commas.</p></div>`}
+    </div>`;
+    openSheet(`
+      <button class="back-btn" id="ceBack">‹ Cash check</button>
+      <h3>Bills &amp; paycheck</h3>
+      <div class="ce-list" id="ceList">${cc.items.map(itemHTML).join('')}</div>
+      <button class="ghost-btn" id="ceAdd">+ Add a bill</button>
+      <h2 class="cc-h">Paycheck</h2>
+      <div class="cc-block">
+        <div class="field"><label for="cePay">Amount</label><div class="money-input"><input id="cePay" inputmode="decimal" value="${cc.paycheck.amount}"/></div></div>
+        <div class="field"><label for="ceNext">Next payday</label><input id="ceNext" type="date" value="${nextPayday()}"/></div>
+        <div class="field"><label for="ceEvery">How often</label><select id="ceEvery"><option value="14">Every other week</option><option value="7">Every week</option></select></div>
+      </div>
+      <h2 class="cc-h">Cycle</h2>
+      <div class="field"><label for="ceStart">New cycle starts on day</label><input id="ceStart" type="number" inputmode="numeric" min="1" max="28" value="${cc.cycleStartDay}"/>
+        <p class="hint">“Cleared this cycle” marks reset on this day each month. With bills on the 23rd, 30th, 3rd, 5th and 9th, the 10th fits.</p></div>
+    `, (root) => {
+      $('#ceEvery', root).value = String(cc.paycheck.every || 14);
+      $('#ceBack', root).onclick = cashSheet;
+      const list = $('#ceList', root);
+      list.addEventListener('input', (e) => {
+        const f = e.target.dataset.f; if (!f || f === 'type') return;
+        const it = cc.items.find((x) => x.id === e.target.closest('.ce-item').dataset.id); if (!it) return;
+        if (f === 'amount') { const v = parseMoney(e.target.value); it.amount = isFinite(v) ? v : 0; }
+        else if (f === 'day') { const v = Math.round(+e.target.value); if (v >= 1 && v <= 31) it.day = v; }
+        else it[f] = e.target.value;
+        save(); render();
+      });
+      list.addEventListener('change', (e) => {
+        if (e.target.dataset.f !== 'type') return;
+        const it = cc.items.find((x) => x.id === e.target.closest('.ce-item').dataset.id); if (!it) return;
+        it.type = e.target.value;
+        if (it.type !== 'card' && it.amount == null) it.amount = 0;
+        save(); render(); cashEditSheet();
+      });
+      list.addEventListener('click', (e) => {
+        const b = e.target.closest('[data-del]'); if (!b) return;
+        const it = cc.items.find((x) => x.id === b.dataset.del);
+        if (!it || !confirm(`Remove “${it.name}”?`)) return;
+        cc.items = cc.items.filter((x) => x !== it); save(); render(); cashEditSheet();
+      });
+      $('#ceAdd', root).onclick = () => {
+        cc.items.push({ id: uid(), name: 'New bill', type: 'auto', amount: 0, day: 1, match: '' });
+        save(); cashEditSheet();
+        setTimeout(() => { const last = [...document.querySelectorAll('.ce-name')].pop(); last?.focus(); last?.select(); }, 350);
+      };
+      $('#cePay', root).oninput = (e) => { const v = parseMoney(e.target.value); if (isFinite(v)) { cc.paycheck.amount = v; save(); } };
+      $('#ceNext', root).onchange = (e) => { if (/^\d{4}-\d{2}-\d{2}$/.test(e.target.value)) { cc.paycheck.next = e.target.value; save(); render(); } };
+      $('#ceEvery', root).onchange = (e) => { cc.paycheck.every = +e.target.value; save(); render(); };
+      $('#ceStart', root).oninput = (e) => { const v = Math.round(+e.target.value); if (v >= 1 && v <= 28) { cc.cycleStartDay = v; save(); render(); } };
+    });
+  }
+
   // ---------------------------------------------------------------- foldable home sections
   /** Puts every section in the open/closed state the user left it in. */
   function applyFolds() {
@@ -948,6 +1390,10 @@
     const toggle = (id, checked, label) => `<label class="switch"><input type="checkbox" id="${id}" ${checked ? 'checked' : ''} aria-label="${label}"/><span></span></label>`;
     const chevron = `<span class="set-chev">${ICONS.chev}</span>`;
     const opened = (state.settings.setOpen ||= {});
+    const homeSummary = () => {
+      const shown = HOME_SECTIONS.filter((x) => !homeHidden()[x.key]).length;
+      return shown === HOME_SECTIONS.length ? 'All sections shown' : `${shown} of ${HOME_SECTIONS.length} sections shown`;
+    };
     const secSummary = () => `Face ID ${state.settings.faceId ? 'on' : 'off'} · Balances ${state.settings.hide ? 'hidden' : 'shown'}`;
     const partySummary = () => (state.settings.celebrate !== false ? 'On · 4 animations take turns' : 'Off');
     // a drop-down section: a header row with a summary, and a body that slides open
@@ -955,7 +1401,7 @@
       <div class="set-sec ${opened[key] ? 'open' : ''}" data-sec="${key}">
         <button class="set-sec-head" aria-expanded="${!!opened[key]}">
           <span class="set-ic" style="--ic:${color}">${ICONS[icon]}</span>
-          <span class="set-text"><span class="set-title">${title}</span><span class="set-sub" id="sum-${key}">${summary}</span></span>
+          <span class="set-text"><span class="set-title">${title}</span><span class="set-sub" id="ssum-${key}">${summary}</span></span>
           <span class="set-sec-chev">${ICONS.chev}</span>
         </button>
         <div class="set-sec-body"><div class="set-sec-inner">${inner}</div></div>
@@ -967,6 +1413,10 @@
       ${section('security', 'shield', '#34c759', 'Security &amp; privacy', secSummary(), `
         ${row({ id: 'fid', icon: 'face', color: '#34c759', title: 'Face ID lock', sub: 'Ask for Face ID when the app opens', right: toggle('sFace', on, 'Face ID lock') })}
         ${row({ icon: 'eyeOff', color: '#5e5ce6', title: 'Hide balances', sub: 'Show •••• instead of amounts', right: toggle('sHide', state.settings.hide, 'Hide balances') })}`)}
+
+      ${section('home', 'layout', '#5e5ce6', 'Home screen', homeSummary(), `
+        ${HOME_SECTIONS.map((x) => row({ icon: x.icon, color: x.color, title: x.title, sub: x.sub, right: toggle(`home-${x.key}`, !homeHidden()[x.key], `Show ${x.title}`) })).join('')}
+        <div class="set-row set-actions"><button class="chip-btn alt" id="homeAll">Show all</button></div>`)}
 
       ${section('accounts', 'bank', '#00b8d9', 'Accounts', bad ? '<span class="down">A bank needs reconnecting</span>' : bankSub, `
         ${row({ id: 'sPlaid', tag: 'button', icon: 'bank', color: '#00b8d9', title: 'Bank connections', sub: 'Plaid server, connected banks, reconnect', right: chevron })}`)}
@@ -1004,6 +1454,21 @@
       <input type="file" id="sFile" accept=".json,application/json" hidden/>
       <input type="file" id="sCsvFile" accept=".csv,text/csv,text/plain" hidden/>
     `, (root) => {
+      HOME_SECTIONS.forEach((x) => {
+        $(`#home-${x.key}`, root).onchange = (e) => {
+          const off = homeHidden();
+          if (e.target.checked) delete off[x.key]; else off[x.key] = true;
+          save(); render();
+          $('#ssum-home', root).textContent = homeSummary();
+        };
+      });
+      $('#homeAll', root).onclick = () => {
+        state.settings.homeHidden = {};
+        HOME_SECTIONS.forEach((x) => { $(`#home-${x.key}`, root).checked = true; });
+        save(); render();
+        $('#ssum-home', root).textContent = homeSummary();
+        toast('All home sections shown');
+      };
       root.querySelectorAll('.set-sec-head').forEach((h) => (h.onclick = () => {
         const sec = h.closest('.set-sec'), key = sec.dataset.sec;
         opened[key] = !sec.classList.contains('open');
@@ -1012,8 +1477,8 @@
         save();
       }));
       const refreshSummaries = () => {
-        $('#sum-security', root).textContent = secSummary();
-        $('#sum-party', root).textContent = partySummary();
+        $('#ssum-security', root).textContent = secSummary();
+        $('#ssum-party', root).textContent = partySummary();
       };
       $('#sHide', root).onchange = (e) => { state.settings.hide = e.target.checked; save(); render(); refreshSummaries(); };
       $('#sParty', root).onchange = (e) => { state.settings.celebrate = e.target.checked; save(); refreshSummaries(); };
@@ -1049,6 +1514,7 @@
             accounts: data.accounts,
             settings: { ...state.settings, ...(data.settings || {}), ...keep },
             plaid: data.plaid?.items ? { items: data.plaid.items, lastSync: 0 } : state.plaid,
+            cash: data.cash || state.cash,
           };
           save(); closeSheet(); render(); toast('Backup restored');
         } catch { toast('That file is not a valid backup'); }
@@ -1148,6 +1614,8 @@
     else groupSheet(b.dataset.open);
   };
   $('#stats').onclick = openFromTile;
+  $('#btnCash').onclick = () => cashSheet();
+  $('#btnAllHidden').onclick = () => { state.settings.setOpen = { ...(state.settings.setOpen || {}), home: true }; save(); settingsSheet(); };
   $('#donutView').onclick = openFromTile;
   $('#fcYears').onclick = (e) => {
     const b = e.target.closest('[data-years]'); if (!b) return;
@@ -1276,6 +1744,7 @@
         state.accounts.push(a);
         created++;
       }
+      if (a.plaid) { a.plaid.available = pa.available ?? null; a.plaid.syncedAt = Date.now(); }
       const v = pa.current ?? pa.available;
       if (v == null || !isFinite(v)) continue;
       setBalance(a, today(), isLiab(a) ? Math.abs(v) : v);
@@ -1299,6 +1768,7 @@
       save(); render();
       toast(n ? `Added ${n} account${n === 1 ? '' : 's'} from ${rec.institution}` : `${rec.institution} is connected`);
       celebrate();
+      refreshCashTx({ force: true }).then((x) => { if (x === 'ok') render(); });
     } catch (e) { toast(e.message || 'Plaid connection failed'); }
   }
 
@@ -1336,6 +1806,7 @@
       });
       state.plaid.lastSync = Date.now();
       save();
+      refreshCashTx().then((r) => { if (r === 'ok' && !isLocked()) render(); });
       const bad = state.plaid.items.filter((i) => i.error);
       if (bad.length) toast(`${bad[0].institution} needs to be reconnected — see Settings`);
       else if (!quiet) toast('Balances updated');

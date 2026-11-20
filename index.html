@@ -62,6 +62,14 @@
       <div class="fold-body"><div class="fold-inner"><div class="stats" id="stats"></div></div></div>
     </section>
 
+    <section class="glass card fold" data-fold="cash" id="cashCard">
+      <button class="fold-head" data-fold-toggle aria-expanded="true"><span class="g-bar" style="background:linear-gradient(180deg,#00E096,#FFB020)"></span><span class="fold-title">Cash check</span><span class="fold-sum" id="sum-cash"></span><span class="fold-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></button>
+      <div class="fold-body"><div class="fold-inner">
+        <div id="ccMini"></div>
+        <button class="primary-btn" id="btnCash">Open Monthly Cash Check</button>
+      </div></div>
+    </section>
+
     <section class="glass card fold" data-fold="growth">
       <button class="fold-head" data-fold-toggle aria-expanded="true"><span class="g-bar" style="background:linear-gradient(180deg,#00E096,#00D4FF)"></span><span class="fold-title">Growth</span><span class="fold-sum" id="sum-growth"></span><span class="fold-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></button>
       <div class="fold-body"><div class="fold-inner">
@@ -115,6 +123,12 @@
         <div id="accountList"></div>
       </div></div>
     </section>
+
+    <div id="allHidden" class="glass card empty" hidden>
+      <h2>Your home screen is empty</h2>
+      <p class="muted">Every section is switched off. Choose what to show in Settings → Home screen.</p>
+      <button class="primary-btn" id="btnAllHidden">Choose sections</button>
+    </div>
 
     <div id="emptyState" class="glass card empty" hidden>
       <div class="empty-icon">$</div>
