@@ -43,6 +43,13 @@
     phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg>',
     trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>',
     play: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',
+    layout: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="7" rx="2"/><rect x="3" y="14" width="8" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>',
+    tiles: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="5" height="12" rx="1.5"/><rect x="9.5" y="6" width="5" height="12" rx="1.5"/><rect x="16" y="6" width="5" height="12" rx="1.5"/></svg>',
+    wallet: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h13v4"/><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M16 13.5h2"/></svg>',
+    trend: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8M15 7h6v6"/></svg>',
+    bars: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+    telescope: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l15-9M8 21l4-7 4 7M18 3l3 5"/></svg>',
+    list: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>',
     shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg>',
     gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
   };
@@ -337,14 +344,28 @@
     return `<span class="${cls}">${signed(delta)}</span><span class="badge ${cls}">${pct(p)}</span><span class="muted small">${esc(label)}</span>`;
   }
 
+  /** Everything on the home screen that can be switched off in Settings → Home screen. */
+  const HOME_SECTIONS = [
+    { key: 'hero', title: 'Overview', sub: 'Net worth chart with Assets / Liabilities views', icon: 'chart', color: '#7C5CFF' },
+    { key: 'stats', title: 'Highlights', sub: 'Assets, Liabilities and Top mover tiles', icon: 'tiles', color: '#00c853' },
+    { key: 'cash', title: 'Cash check', sub: 'Can checking cover the bills before payday', icon: 'wallet', color: '#ff9f0a' },
+    { key: 'growth', title: 'Growth', sub: 'Net worth change over time', icon: 'trend', color: '#00b8d9' },
+    { key: 'monthly', title: 'Monthly change', sub: 'Bar chart of the last 12 months', icon: 'bars', color: '#0a84ff' },
+    { key: 'forecast', title: 'Growth estimator', sub: 'Forecast 1 to 30 years out', icon: 'telescope', color: '#af52de' },
+    { key: 'accounts', title: 'Accounts', sub: 'Your list of assets and liabilities', icon: 'list', color: '#ff375f' },
+  ];
+  const homeHidden = () => (state.settings.homeHidden ||= {});
+
   const rangeLabel = (r) => ({ '1W': 'past week', '1M': 'past month', '3M': 'past 3 months', YTD: 'this year', '1Y': 'past year', ALL: 'all time' }[r]);
 
   function render() {
     state.plaid ||= { items: [], lastSync: 0 };
     const has = state.accounts.length > 0;
     $('#emptyState').hidden = has;
-    for (const sel of ['.hero', '#statsFold', '.accounts']) $(sel).hidden = !has;
-    document.querySelectorAll('main > .card:not(.empty)').forEach((c) => (c.hidden = !has));
+    // each home section shows only when there are accounts and it's switched on in Settings
+    const off = homeHidden();
+    document.querySelectorAll('main [data-fold]').forEach((sec) => (sec.hidden = !has || !!off[sec.dataset.fold]));
+    $('#allHidden').hidden = !has || HOME_SECTIONS.some((x) => !off[x.key]);
     $('#fab').hidden = !has;
     $('#btnHide').innerHTML = state.settings.hide ? ICONS.eyeOff : ICONS.eye;
     renderSyncRow();
@@ -1369,6 +1390,10 @@
     const toggle = (id, checked, label) => `<label class="switch"><input type="checkbox" id="${id}" ${checked ? 'checked' : ''} aria-label="${label}"/><span></span></label>`;
     const chevron = `<span class="set-chev">${ICONS.chev}</span>`;
     const opened = (state.settings.setOpen ||= {});
+    const homeSummary = () => {
+      const shown = HOME_SECTIONS.filter((x) => !homeHidden()[x.key]).length;
+      return shown === HOME_SECTIONS.length ? 'All sections shown' : `${shown} of ${HOME_SECTIONS.length} sections shown`;
+    };
     const secSummary = () => `Face ID ${state.settings.faceId ? 'on' : 'off'} · Balances ${state.settings.hide ? 'hidden' : 'shown'}`;
     const partySummary = () => (state.settings.celebrate !== false ? 'On · 4 animations take turns' : 'Off');
     // a drop-down section: a header row with a summary, and a body that slides open
@@ -1376,7 +1401,7 @@
       <div class="set-sec ${opened[key] ? 'open' : ''}" data-sec="${key}">
         <button class="set-sec-head" aria-expanded="${!!opened[key]}">
           <span class="set-ic" style="--ic:${color}">${ICONS[icon]}</span>
-          <span class="set-text"><span class="set-title">${title}</span><span class="set-sub" id="sum-${key}">${summary}</span></span>
+          <span class="set-text"><span class="set-title">${title}</span><span class="set-sub" id="ssum-${key}">${summary}</span></span>
           <span class="set-sec-chev">${ICONS.chev}</span>
         </button>
         <div class="set-sec-body"><div class="set-sec-inner">${inner}</div></div>
@@ -1388,6 +1413,10 @@
       ${section('security', 'shield', '#34c759', 'Security &amp; privacy', secSummary(), `
         ${row({ id: 'fid', icon: 'face', color: '#34c759', title: 'Face ID lock', sub: 'Ask for Face ID when the app opens', right: toggle('sFace', on, 'Face ID lock') })}
         ${row({ icon: 'eyeOff', color: '#5e5ce6', title: 'Hide balances', sub: 'Show •••• instead of amounts', right: toggle('sHide', state.settings.hide, 'Hide balances') })}`)}
+
+      ${section('home', 'layout', '#5e5ce6', 'Home screen', homeSummary(), `
+        ${HOME_SECTIONS.map((x) => row({ icon: x.icon, color: x.color, title: x.title, sub: x.sub, right: toggle(`home-${x.key}`, !homeHidden()[x.key], `Show ${x.title}`) })).join('')}
+        <div class="set-row set-actions"><button class="chip-btn alt" id="homeAll">Show all</button></div>`)}
 
       ${section('accounts', 'bank', '#00b8d9', 'Accounts', bad ? '<span class="down">A bank needs reconnecting</span>' : bankSub, `
         ${row({ id: 'sPlaid', tag: 'button', icon: 'bank', color: '#00b8d9', title: 'Bank connections', sub: 'Plaid server, connected banks, reconnect', right: chevron })}`)}
@@ -1425,6 +1454,21 @@
       <input type="file" id="sFile" accept=".json,application/json" hidden/>
       <input type="file" id="sCsvFile" accept=".csv,text/csv,text/plain" hidden/>
     `, (root) => {
+      HOME_SECTIONS.forEach((x) => {
+        $(`#home-${x.key}`, root).onchange = (e) => {
+          const off = homeHidden();
+          if (e.target.checked) delete off[x.key]; else off[x.key] = true;
+          save(); render();
+          $('#ssum-home', root).textContent = homeSummary();
+        };
+      });
+      $('#homeAll', root).onclick = () => {
+        state.settings.homeHidden = {};
+        HOME_SECTIONS.forEach((x) => { $(`#home-${x.key}`, root).checked = true; });
+        save(); render();
+        $('#ssum-home', root).textContent = homeSummary();
+        toast('All home sections shown');
+      };
       root.querySelectorAll('.set-sec-head').forEach((h) => (h.onclick = () => {
         const sec = h.closest('.set-sec'), key = sec.dataset.sec;
         opened[key] = !sec.classList.contains('open');
@@ -1433,8 +1477,8 @@
         save();
       }));
       const refreshSummaries = () => {
-        $('#sum-security', root).textContent = secSummary();
-        $('#sum-party', root).textContent = partySummary();
+        $('#ssum-security', root).textContent = secSummary();
+        $('#ssum-party', root).textContent = partySummary();
       };
       $('#sHide', root).onchange = (e) => { state.settings.hide = e.target.checked; save(); render(); refreshSummaries(); };
       $('#sParty', root).onchange = (e) => { state.settings.celebrate = e.target.checked; save(); refreshSummaries(); };
@@ -1571,6 +1615,7 @@
   };
   $('#stats').onclick = openFromTile;
   $('#btnCash').onclick = () => cashSheet();
+  $('#btnAllHidden').onclick = () => { state.settings.setOpen = { ...(state.settings.setOpen || {}), home: true }; save(); settingsSheet(); };
   $('#donutView').onclick = openFromTile;
   $('#fcYears').onclick = (e) => {
     const b = e.target.closest('[data-years]'); if (!b) return;
