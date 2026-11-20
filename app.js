@@ -548,9 +548,9 @@
     const entered = cc.amounts[cyc.key]?.[it.id];
     if (entered != null) return { value: entered, kind: 'entered' };
     const lp = cc.lastPay[it.id];
-    if (lp) return { value: lp.amount, kind: 'estimate', label: `Estimate – update from Wallet · last payment ${fmtDate(lp.date, { month: 'short', day: 'numeric' })}` };
+    if (lp) return { value: lp.amount, kind: 'estimate', label: `Estimate - update from Wallet · last payment ${fmtDate(lp.date, { month: 'short', day: 'numeric' })}` };
     const prev = Object.keys(cc.amounts).filter((k) => k < cyc.key).sort().reverse().map((k) => cc.amounts[k][it.id]).find((v) => v != null);
-    if (prev != null) return { value: prev, kind: 'estimate', label: "Estimate – update from Wallet · last month's amount" };
+    if (prev != null) return { value: prev, kind: 'estimate', label: "Estimate - update from Wallet · last month's amount" };
     return { value: 0, kind: 'missing', label: "Enter this month's amount from Wallet" };
   }
 
