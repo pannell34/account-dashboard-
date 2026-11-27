@@ -43,6 +43,7 @@
     phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg>',
     trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>',
     play: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',
+    target: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg>',
     layout: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="7" rx="2"/><rect x="3" y="14" width="8" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>',
     tiles: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="5" height="12" rx="1.5"/><rect x="9.5" y="6" width="5" height="12" rx="1.5"/><rect x="16" y="6" width="5" height="12" rx="1.5"/></svg>',
     wallet: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h13v4"/><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M16 13.5h2"/></svg>',
@@ -349,6 +350,7 @@
     { key: 'hero', title: 'Overview', sub: 'Net worth chart with Assets / Liabilities views', icon: 'chart', color: '#7C5CFF' },
     { key: 'stats', title: 'Highlights', sub: 'Assets, Liabilities and Top mover tiles', icon: 'tiles', color: '#00c853' },
     { key: 'cash', title: 'Cash check', sub: 'Can checking cover the bills before payday', icon: 'wallet', color: '#ff9f0a' },
+    { key: 'budget', title: 'Budget', sub: 'Short, medium and long term costs to check off', icon: 'target', color: '#30d158' },
     { key: 'growth', title: 'Growth', sub: 'Net worth change over time', icon: 'trend', color: '#00b8d9' },
     { key: 'monthly', title: 'Monthly change', sub: 'Bar chart of the last 12 months', icon: 'bars', color: '#0a84ff' },
     { key: 'forecast', title: 'Growth estimator', sub: 'Forecast 1 to 30 years out', icon: 'telescope', color: '#af52de' },
@@ -440,6 +442,7 @@
     renderGrowth(total);
     renderForecast(total);
     renderCashMini();
+    renderBudget();
 
     // one-line summaries shown on folded section headers
     {
@@ -900,6 +903,186 @@
       $('#ceNext', root).onchange = (e) => { if (/^\d{4}-\d{2}-\d{2}$/.test(e.target.value)) { cc.paycheck.next = e.target.value; save(); render(); } };
       $('#ceEvery', root).onchange = (e) => { cc.paycheck.every = +e.target.value; save(); render(); };
       $('#ceStart', root).oninput = (e) => { const v = Math.round(+e.target.value); if (v >= 1 && v <= 28) { cc.cycleStartDay = v; save(); render(); } };
+    });
+  }
+
+  // ---------------------------------------------------------------- Budget: short / medium / long term costs
+  // Each item costs something monthly, yearly or once, and belongs to a term. Check items off when
+  // they're attained: one-time goals stay done; monthly items reset each month, yearly items each year.
+  const BD_FREQ = { monthly: 'Monthly', annual: 'Yearly', once: 'One time' };
+  const BD_TERM = {
+    short: { label: 'Short term', hint: 'Within a year', color: '#00D4FF' },
+    medium: { label: 'Medium term', hint: '1–3 years', color: '#7C5CFF' },
+    long: { label: 'Long term', hint: '3+ years', color: '#FF4D9D' },
+  };
+  const budgetState = () => (state.budget ||= { items: [], filter: 'all' });
+  const periodKey = (it) => (it.freq === 'monthly' ? today().slice(0, 7) : it.freq === 'annual' ? today().slice(0, 4) : null);
+  const bdDone = (it) => (it.freq === 'once' ? !!it.doneAt : it.doneFor === periodKey(it));
+  /** What's still needed for the current period (one-time: cost minus saved so far). */
+  const bdToGo = (it) => (bdDone(it) ? 0 : it.freq === 'once' ? Math.max(0, (+it.cost || 0) - (+it.saved || 0)) : +it.cost || 0);
+  const monthsUntil = (d) => {
+    const a = parseDate(today()), b = parseDate(d);
+    return (b.getFullYear() - a.getFullYear()) * 12 + (b.getMonth() - a.getMonth()) + (b.getDate() >= a.getDate() ? 0 : -1);
+  };
+  /** For a one-time goal with a target date: how much to put aside each month to make it. */
+  function bdPerMonth(it) {
+    if (it.freq !== 'once' || !it.target || bdDone(it)) return null;
+    const left = bdToGo(it);
+    if (left <= 0) return null;
+    const m = monthsUntil(it.target);
+    return m <= 0 ? { overdue: true, left } : { amount: left / m, months: m };
+  }
+
+  function budgetTotals() {
+    const items = budgetState().items;
+    const cost = (f) => items.filter((x) => x.freq === f).reduce((s, x) => s + (+x.cost || 0), 0);
+    const monthly = cost('monthly'), annual = cost('annual');
+    const once = items.filter((x) => x.freq === 'once');
+    return {
+      n: items.length,
+      done: items.filter(bdDone).length,
+      perMonth: monthly + annual / 12,
+      perYear: monthly * 12 + annual,
+      oneTimeLeft: once.reduce((s, x) => s + bdToGo(x), 0),
+      oneTimeTotal: once.reduce((s, x) => s + (+x.cost || 0), 0),
+      toGo: items.reduce((s, x) => s + bdToGo(x), 0),
+      total: items.reduce((s, x) => s + (+x.cost || 0), 0),
+    };
+  }
+
+  function bdRowHTML(it) {
+    const done = bdDone(it), t = BD_TERM[it.term] || BD_TERM.short;
+    const per = bdPerMonth(it);
+    const bits = [`${money(+it.cost || 0)}${it.freq === 'monthly' ? '/mo' : it.freq === 'annual' ? '/yr' : ''}`, `<span class="bd-term" style="--t:${t.color}">${t.label.replace(' term', '')}</span>`];
+    if (done) bits.push(it.freq === 'once' ? `Attained ${fmtDate(it.doneAt, { month: 'short', day: 'numeric' })}` : it.freq === 'monthly' ? 'Done this month' : 'Done this year');
+    else if (it.target) bits.push(`by ${fmtDate(it.target, { month: 'short', year: 'numeric' })}`);
+    const prog = it.freq === 'once' && !done && +it.saved > 0 && +it.cost > 0 ? Math.min(100, (+it.saved / +it.cost) * 100) : null;
+    return `<div class="bd-row ${done ? 'done' : ''}">
+      <button class="bd-check" data-check="${it.id}" aria-pressed="${done}" aria-label="${done ? 'Mark not attained' : 'Mark attained'}: ${esc(it.name)}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+      </button>
+      <button class="bd-main" data-edit="${it.id}">
+        <span class="bd-name">${esc(it.name)}</span>
+        <span class="bd-sub">${bits.join(' · ')}</span>
+        ${prog != null ? `<span class="bd-prog"><i style="width:${prog.toFixed(1)}%;background:${t.color}"></i></span><span class="bd-sub">${money(+it.saved)} saved of ${money(+it.cost)}</span>` : ''}
+        ${per ? `<span class="bd-save ${per.overdue ? 'late' : ''}">${per.overdue ? `Target date passed · ${money(per.left)} to go` : `Save ${money(per.amount)}/mo for ${per.months} month${per.months === 1 ? '' : 's'}`}</span>` : ''}
+      </button>
+      <span class="bd-togo">${done ? '' : money(bdToGo(it))}</span>
+    </div>`;
+  }
+
+  function renderBudget() {
+    const b = budgetState(), tot = budgetTotals();
+    $('#sum-budget').textContent = tot.n ? `${tot.done} of ${tot.n} attained · ${moneyShort(tot.toGo)} to go` : 'Add your first item';
+    $('#bdTotals').innerHTML = tot.n ? `
+      <div class="bd-tile"><span>Monthly</span><b>${moneyShort(tot.perMonth)}</b><small>per month</small></div>
+      <div class="bd-tile"><span>Yearly</span><b>${moneyShort(tot.perYear)}</b><small>per year</small></div>
+      <div class="bd-tile"><span>One-time</span><b>${moneyShort(tot.oneTimeLeft)}</b><small>still to go</small></div>` : '';
+    const pctDone = tot.n ? (tot.done / tot.n) * 100 : 0;
+    $('#bdProgress').innerHTML = tot.n ? `<div class="bd-bar"><i style="width:${pctDone.toFixed(1)}%"></i></div>
+      <div class="bd-progtext"><span><b>${tot.done}</b> of ${tot.n} attained</span><span>${money(tot.toGo)} to go</span></div>` : '';
+    $('#bdFilter').hidden = !tot.n;
+    $('#bdFilter').innerHTML = [['all', 'All'], ...Object.entries(BD_TERM).map(([k, v]) => [k, v.label.replace(' term', '')])]
+      .map(([k, l]) => {
+        const c = k === 'all' ? tot.n : b.items.filter((x) => x.term === k).length;
+        return `<button data-term="${k}" class="${(b.filter || 'all') === k ? 'active' : ''}">${l}<small>${c}</small></button>`;
+      }).join('');
+    const list = b.items.filter((x) => (b.filter || 'all') === 'all' || x.term === b.filter);
+    // open items first (soonest target first), attained ones at the bottom
+    const sorted = [...list].sort((x, y) => (bdDone(x) - bdDone(y)) || ((x.target || '9999') < (y.target || '9999') ? -1 : (x.target || '9999') > (y.target || '9999') ? 1 : 0));
+    $('#bdList').innerHTML = !tot.n
+      ? `<p class="hint bd-empty">Add things you're paying for or saving toward — like car insurance (yearly), a gym membership (monthly), or a vacation or new roof (one time). Check them off as you reach them.</p>`
+      : sorted.length ? sorted.map(bdRowHTML).join('') : '<p class="hint bd-empty">Nothing in this term yet.</p>';
+  }
+
+  function toggleBudgetItem(id) {
+    const it = budgetState().items.find((x) => x.id === id); if (!it) return;
+    const was = bdDone(it);
+    if (it.freq === 'once') it.doneAt = was ? null : today();
+    else it.doneFor = was ? null : periodKey(it);
+    save(); render();
+    if (!was) {
+      toast(it.freq === 'once' ? `🎉 ${it.name} attained!` : `✓ ${it.name} done for this ${it.freq === 'monthly' ? 'month' : 'year'}`);
+      if (it.freq === 'once') celebrate();
+    }
+  }
+
+  function budgetItemSheet(id) {
+    const b = budgetState();
+    const editing = b.items.find((x) => x.id === id);
+    const it = editing ? { ...editing } : { name: '', cost: '', freq: 'once', term: 'short', target: '', saved: '', note: '' };
+    const seg = (name, opts, val) => `<div class="chips seg" data-seg="${name}">${Object.entries(opts).map(([k, v]) =>
+      `<button type="button" data-v="${k}" class="${k === val ? 'active' : ''}">${typeof v === 'string' ? v : `${v.label.replace(' term', '')}<small>${v.hint}</small>`}</button>`).join('')}</div>`;
+    openSheet(`
+      <h3>${editing ? 'Edit item' : 'Add budget item'}</h3>
+      <div class="field"><label for="bdName">What is it?</label><input id="bdName" placeholder="e.g. Car insurance, Vacation, New roof" value="${esc(it.name)}" autocomplete="off"/></div>
+      <div class="field"><label for="bdCost">Cost</label><div class="money-input"><input id="bdCost" inputmode="decimal" placeholder="0.00" value="${it.cost !== '' && it.cost != null ? it.cost : ''}"/></div></div>
+      <div class="field"><label>How often</label>${seg('freq', BD_FREQ, it.freq)}</div>
+      <div class="field"><label>Term</label>${seg('term', BD_TERM, it.term)}</div>
+      <div class="field"><label for="bdTarget">Target date <span class="muted">(optional)</span></label><input id="bdTarget" type="date" value="${it.target || ''}"/>
+        <p class="hint" id="bdTargetHint"></p></div>
+      <div class="field" id="bdSavedField"><label for="bdSaved">Saved so far <span class="muted">(optional)</span></label><div class="money-input"><input id="bdSaved" inputmode="decimal" placeholder="0.00" value="${+it.saved ? it.saved : ''}"/></div></div>
+      <div class="field"><label for="bdNote">Note <span class="muted">(optional)</span></label><input id="bdNote" value="${esc(it.note || '')}" placeholder="e.g. renews in March" autocomplete="off"/></div>
+      <button class="primary-btn" id="bdSave">${editing ? 'Save changes' : 'Add to budget'}</button>
+      ${editing ? '<button class="danger-btn" id="bdDel">Delete</button>' : ''}
+    `, (root) => {
+      const pick = { freq: it.freq, term: it.term };
+      let termTouched = !!editing;
+      const update = () => {
+        $('#bdSavedField', root).hidden = pick.freq !== 'once';
+        const cost = parseMoney($('#bdCost', root).value), saved = parseMoney($('#bdSaved', root).value) || 0;
+        const tgt = $('#bdTarget', root).value;
+        let hint = pick.freq === 'monthly' ? 'For a monthly cost, a target date is just a reminder.' : pick.freq === 'annual' ? 'For a yearly cost, use the date it renews.' : '';
+        if (pick.freq === 'once' && tgt && isFinite(cost)) {
+          const m = monthsUntil(tgt), left = Math.max(0, cost - saved);
+          hint = m > 0 ? `Save about ${money(left / m)} a month for ${m} month${m === 1 ? '' : 's'} to reach it.` : 'That date has already passed.';
+        }
+        $('#bdTargetHint', root).textContent = hint;
+      };
+      root.querySelectorAll('[data-seg]').forEach((g) => (g.onclick = (e) => {
+        const b2 = e.target.closest('[data-v]'); if (!b2) return;
+        pick[g.dataset.seg] = b2.dataset.v;
+        if (g.dataset.seg === 'term') termTouched = true;
+        g.querySelectorAll('[data-v]').forEach((x) => x.classList.toggle('active', x === b2));
+        update();
+      }));
+      // a target date suggests the term until you choose one yourself
+      $('#bdTarget', root).onchange = () => {
+        const tgt = $('#bdTarget', root).value;
+        if (tgt && !termTouched) {
+          const m = monthsUntil(tgt);
+          pick.term = m <= 12 ? 'short' : m <= 36 ? 'medium' : 'long';
+          root.querySelectorAll('[data-seg="term"] [data-v]').forEach((x) => x.classList.toggle('active', x.dataset.v === pick.term));
+        }
+        update();
+      };
+      $('#bdCost', root).oninput = update;
+      $('#bdSaved', root).oninput = update;
+      update();
+      if (!editing) setTimeout(() => $('#bdName', root).focus(), 350);
+      $('#bdSave', root).onclick = () => {
+        const name = $('#bdName', root).value.trim();
+        const cost = parseMoney($('#bdCost', root).value);
+        if (!name) { toast('Give it a name'); return; }
+        if (!isFinite(cost) || cost < 0) { toast('Enter the cost'); return; }
+        const saved = parseMoney($('#bdSaved', root).value);
+        const fields = {
+          name, cost, freq: pick.freq, term: pick.term,
+          target: $('#bdTarget', root).value || null,
+          saved: pick.freq === 'once' && isFinite(saved) ? Math.max(0, saved) : 0,
+          note: $('#bdNote', root).value.trim(),
+        };
+        if (editing) {
+          if (editing.freq !== fields.freq) { editing.doneAt = null; editing.doneFor = null; }
+          Object.assign(editing, fields);
+        } else b.items.push({ id: uid(), ...fields, doneAt: null, doneFor: null, created: today() });
+        save(); closeSheet(); render(); toast(editing ? 'Saved' : 'Added to your budget');
+      };
+      if (editing) $('#bdDel', root).onclick = () => {
+        if (!confirm(`Delete “${editing.name}” from your budget?`)) return;
+        b.items = b.items.filter((x) => x !== editing);
+        save(); closeSheet(); render(); toast('Deleted');
+      };
     });
   }
 
@@ -1515,6 +1698,7 @@
             settings: { ...state.settings, ...(data.settings || {}), ...keep },
             plaid: data.plaid?.items ? { items: data.plaid.items, lastSync: 0 } : state.plaid,
             cash: data.cash || state.cash,
+            budget: data.budget || state.budget,
           };
           save(); closeSheet(); render(); toast('Backup restored');
         } catch { toast('That file is not a valid backup'); }
@@ -1615,6 +1799,17 @@
   };
   $('#stats').onclick = openFromTile;
   $('#btnCash').onclick = () => cashSheet();
+  $('#bdAdd').onclick = () => budgetItemSheet();
+  $('#bdFilter').onclick = (e) => {
+    const b = e.target.closest('[data-term]'); if (!b) return;
+    budgetState().filter = b.dataset.term; save(); renderBudget();
+  };
+  $('#bdList').onclick = (e) => {
+    const chk = e.target.closest('[data-check]');
+    if (chk) return toggleBudgetItem(chk.dataset.check);
+    const ed = e.target.closest('[data-edit]');
+    if (ed) budgetItemSheet(ed.dataset.edit);
+  };
   $('#btnAllHidden').onclick = () => { state.settings.setOpen = { ...(state.settings.setOpen || {}), home: true }; save(); settingsSheet(); };
   $('#donutView').onclick = openFromTile;
   $('#fcYears').onclick = (e) => {
